@@ -1,0 +1,140 @@
+import type { LiveEvent, User } from "../types";
+
+interface Props {
+  event: LiveEvent;
+}
+
+const BADGE: Record<string, { label: string; color: string; icon: string }> = {
+  chat: { label: "Bình luận", color: "bg-zinc-700 text-zinc-200", icon: "💬" },
+  gift: { label: "Quà", color: "bg-ttred/15 text-ttred", icon: "🎁" },
+  member: { label: "Tham gia", color: "bg-ttcyan/15 text-ttcyan", icon: "👋" },
+  like: { label: "Like", color: "bg-pink-500/15 text-pink-400", icon: "❤️" },
+  follow: { label: "Follow", color: "bg-violet-500/15 text-violet-400", icon: "➕" },
+  share: { label: "Chia sẻ", color: "bg-amber-500/15 text-amber-400", icon: "🔗" },
+  social: { label: "Tương tác", color: "bg-amber-500/15 text-amber-400", icon: "🔔" },
+  roomUser: { label: "Người xem", color: "bg-emerald-500/15 text-emerald-400", icon: "👥" },
+  emote: { label: "Emote", color: "bg-zinc-700 text-zinc-200", icon: "😀" },
+  envelope: { label: "Treasure", color: "bg-yellow-500/15 text-yellow-400", icon: "📦" },
+  questionNew: { label: "Câu hỏi", color: "bg-sky-500/15 text-sky-400", icon: "❓" },
+  liveIntro: { label: "Intro", color: "bg-zinc-700 text-zinc-200", icon: "🎬" },
+  linkMicBattle: { label: "Battle", color: "bg-orange-500/15 text-orange-400", icon: "⚔️" },
+  linkMicArmies: { label: "Battle điểm", color: "bg-orange-500/15 text-orange-400", icon: "🏆" },
+  subNotify: { label: "Subscribe", color: "bg-purple-500/15 text-purple-400", icon: "⭐" },
+};
+
+function getUser(data: Record<string, unknown>): User | undefined {
+  const user = data.user as User | undefined;
+  return user && typeof user === "object" ? user : undefined;
+}
+
+function time(ts: number): string {
+  return new Date(ts).toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
+function renderContent(event: LiveEvent): string {
+  const data = event.data;
+  switch (event.type) {
+    case "chat":
+      return String(data.comment ?? "");
+    case "gift": {
+      const name = data.giftName ?? data.giftPictureUrl ?? "";
+      const count = Number(data.repeatCount ?? 1);
+      const diamond = data.diamondCount != null ? ` · ${data.diamondCount} 💎` : "";
+      const streak = data.giftType === 1 && !data.repeatEnd ? " (đang streak…)" : "";
+      return `${count > 1 ? `x${count} ` : ""}${name}${diamond}${streak}`;
+    }
+    case "member": {
+      const mc = data.memberCount;
+      return mc != null ? `đã tham gia phòng (${mc} người xem)` : "đã tham gia phòng";
+    }
+    case "like":
+      return `đã gửi ${data.likeCount ?? 0} like (tổng ${data.totalLikeCount ?? 0})`;
+    case "follow":
+      return "đã follow host";
+    case "share":
+      return "đã chia sẻ stream";
+    case "social": {
+      const action = data.action ? String(data.action) : "";
+      return action || "đã tương tác";
+    }
+    case "roomUser":
+      return `lượt xem hiện tại: ${(data.viewerCount ?? 0).toLocaleString()}`;
+    case "emote":
+      return "đã gửi emote";
+    case "envelope":
+      return "đã gửi treasure chest";
+    case "questionNew": {
+      const details = (data.details as Record<string, unknown> | undefined) ?? {};
+      return String(details.questionText ?? "đã đặt câu hỏi");
+    }
+    case "liveIntro": {
+      const host = (data.host as User | undefined) ?? {};
+      return `host ${host.nickname ?? host.uniqueId ?? ""} bắt đầu intro`;
+    }
+    case "linkMicBattle":
+      return "một trận battle bắt đầu";
+    case "linkMicArmies":
+      return `battle: gift x${data.giftCount ?? 1} · ${data.totalDiamondCount ?? 0} 💎`;
+    case "subNotify":
+      return "đã đăng ký kênh";
+    default:
+      return "";
+  }
+}
+
+export function EventRow({ event }: Props) {
+  const meta = BADGE[event.type] ?? { label: event.type, color: "bg-zinc-700 text-zinc-200", icon: "•" };
+  const user = getUser(event.data);
+  const nickname = user?.nickname ?? user?.uniqueId ?? "Ẩn danh";
+  const uniqueId = user?.uniqueId;
+  const avatar = user?.profilePictureUrl;
+
+  return (
+    <li className="flex items-start gap-3 rounded-lg border border-edge/60 bg-ink/40 px-3 py-2.5">
+      {user ? (
+        <>
+          {avatar ? (
+            <img
+              src={avatar}
+              alt={nickname}
+              className="mt-0.5 h-9 w-9 shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-sm text-zinc-500">
+              {meta.icon}
+            </div>
+          )}
+
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              <span className="truncate font-medium text-zinc-100">{nickname}</span>
+              {uniqueId && <span className="truncate text-xs text-zinc-500">@{uniqueId}</span>}
+              <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${meta.color}`}>
+                {meta.label}
+              </span>
+            </div>
+            <p className="mt-0.5 break-words text-sm text-zinc-300">{renderContent(event)}</p>
+          </div>
+        </>
+      ) : (
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm">{meta.icon}</span>
+            <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${meta.color}`}>
+              {meta.label}
+            </span>
+          </div>
+          <p className="mt-0.5 break-words text-sm text-zinc-300">{renderContent(event)}</p>
+        </div>
+      )}
+
+      <span className="shrink-0 pt-0.5 text-[10px] tabular-nums text-zinc-600">
+        {time(event.ts)}
+      </span>
+    </li>
+  );
+}
