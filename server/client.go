@@ -87,7 +87,7 @@ func (c *client) connectRoom(username string) {
 			return
 		}
 		if err != nil {
-			emit(event{Type: "status", Data: map[string]interface{}{"state": "error", "message": err.Error()}, Ts: time.Now().UnixMilli()})
+			emit(event{Type: "status", Data: map[string]interface{}{"state": "error", "message": friendlyError(err)}, Ts: time.Now().UnixMilli()})
 			return
 		}
 		c.tracker = trk
@@ -129,9 +129,11 @@ func (c *client) readPump() {
 		switch cmd.Action {
 		case "connect":
 			if cmd.Username != "" {
+				logf("[cmd] connect %q from %s", cmd.Username, c.conn.RemoteAddr())
 				c.connectRoom(normalizeUsername(cmd.Username))
 			}
 		case "disconnect":
+			logf("[cmd] disconnect from %s", c.conn.RemoteAddr())
 			c.disconnectRoom()
 		}
 	}
@@ -178,4 +180,19 @@ func normalizeUsername(raw string) string {
 		s = s[:i]
 	}
 	return s
+}
+
+func friendlyError(err error) string {
+	msg := err.Error()
+	lower := strings.ToLower(msg)
+	switch {
+	case strings.Contains(lower, "rate limit") || strings.Contains(lower, "429"):
+		return "Đã đạt giới hạn sign (rate limit) của Euler Stream. Đợi vài phút, hoặc thêm SIGN_API_KEY (miễn phí tại eulerstream.com)."
+	case strings.Contains(lower, "offline") || strings.Contains(lower, "not live"):
+		return "User này hiện không đang LIVE."
+	case strings.Contains(lower, "timeout") || strings.Contains(lower, "deadline"):
+		return "Kết nối quá hạn (timeout). Thử lại sau."
+	default:
+		return msg
+	}
 }

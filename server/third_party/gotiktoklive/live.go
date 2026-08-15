@@ -74,7 +74,9 @@ func (t *TikTok) newLive(roomId string) *Live {
 			// to call cancel to trigger the other routines, but calls to close is only for
 			// cleanup and block till done
 			cancel()
-			live.wss.Close()
+			if live.wss != nil {
+				live.wss.Close()
+			}
 			live.wg.Wait()
 			t.mu.Lock()
 			t.streams -= 1
@@ -156,11 +158,40 @@ func (t *TikTok) TrackRoom(roomId string) (*Live, error) {
 		return nil, err
 	}
 
-	if err := live.connectRoom(); err != nil {
+	// The im/fetch endpoint no longer returns a push server (TikTok moved to
+	// a pure HTTP long-poll). Fall back to polling im/fetch on a timer.
+	if live.wsURL == "" {
+		live.startLongPoll()
+	} else if err := live.connectRoom(); err != nil {
 		return nil, err
 	}
 
 	return live, nil
+}
+
+// startLongPoll repeatedly calls getRoomData (which advances l.cursor) and
+// drains new messages into l.Events. Used when TikTok does not hand out a
+// WebSocket push server.
+func (l *Live) startLongPoll() {
+	l.wg.Add(1)
+	go func() {
+		defer l.wg.Done()
+		defer close(l.Events)
+		ticker := time.NewTicker(2 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-l.done():
+				return
+			case <-ticker.C:
+				if err := l.getRoomData(); err != nil {
+					l.t.errHandler(fmt.Errorf("im/fetch long-poll failed: %w", err))
+					// Tolerate transient failures; only stop on cancellation.
+					continue
+				}
+			}
+		}
+	}()
 }
 
 func (live *Live) connectRoom() error {
@@ -231,6 +262,17 @@ func (l *Live) getRoomData() error {
 	params := copyMap(defaultGETParams)
 	params["room_id"] = l.ID
 	params["device_id"] = getRandomDeviceID()
+	// im/fetch-specific params (required for the web_pc audience flow).
+	params["identity"] = "audience"
+	params["sup_ws_ds_opt"] = "1"
+	params["device_platform"] = "web_pc"
+	params["channel"] = "tiktok_web"
+	params["data_collection_enabled"] = "true"
+	params["os"] = "windows"
+	params["priority_region"] = "US"
+	params["region"] = "US"
+	params["user_is_login"] = "false"
+	params["webcast_language"] = "en-US"
 	if l.cursor != "" {
 		params["cursor"] = l.cursor
 	}
@@ -243,19 +285,20 @@ func (l *Live) getRoomData() error {
 		return err
 	}
 	ttsCookie := headers.Get("X-Set-TT-Cookie")
-	cookies, err := http.ParseCookie(ttsCookie)
-	if err != nil {
-		return fmt.Errorf("X-SetTT-Cookie not parsable: %w", err)
+	if ttsCookie != "" {
+		cookies, err := http.ParseCookie(ttsCookie)
+		if err != nil {
+			return fmt.Errorf("X-SetTT-Cookie not parsable: %w", err)
+		}
+		for i := range cookies {
+			cookies[i].Domain = ".tiktok.com"
+		}
+		u, err := url.Parse("https://tiktok.com")
+		if err != nil {
+			return fmt.Errorf("semantica error couldnot parse secure cookie endpoint, please report: %w", err)
+		}
+		t.c.Jar.SetCookies(u, cookies)
 	}
-
-	for i := range cookies {
-		cookies[i].Domain = ".tiktok.com"
-	}
-	u, err := url.Parse("https://tiktok.com")
-	if err != nil {
-		return fmt.Errorf("semantica error couldnot parse secure cookie endpoint, please report: %w", err)
-	}
-	t.c.Jar.SetCookies(u, cookies)
 
 	var rsp pb.WebcastResponse
 	if err := proto.Unmarshal(body, &rsp); err != nil {
@@ -263,14 +306,12 @@ func (l *Live) getRoomData() error {
 	}
 
 	l.cursor = rsp.Cursor
-	if rsp.PushServer != "" && rsp.RouteParamsMap != nil {
-		l.wsURL = rsp.PushServer
-		l.wsParams = make(map[string]string)
-		for k, v := range rsp.RouteParamsMap {
-			l.wsParams[k] = v
-		}
 
-	}
+	// TikTok no longer supports the dedicated WebSocket push server reliably
+	// (the handshake is rejected). The im/fetch response is a long-poll, so
+	// leave wsURL empty and let TrackRoom fall back to the poll loop.
+	_ = rsp.PushServer
+	_ = rsp.RouteParamsMap
 
 	for _, msg := range rsp.Messages {
 		parsed, err := parseMsg(msg, t.warnHandler, t.debugHandler, t.enableExperimentalEvents)
@@ -436,6 +477,9 @@ func (l *Live) DownloadStream(file ...string) error {
 }
 
 func (t *TikTok) signURL(reqUrl string, options *reqOptions) ([]byte, http.Header, error) {
+	if t.signFunc != nil {
+		return t.signFunc(reqUrl)
+	}
 	query := map[string]string{
 		"client":  t.clientName,
 		"uuc":     strconv.Itoa(t.streams),

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	gotiktoklive "github.com/steampoweredtaco/gotiktoklive"
@@ -94,13 +95,40 @@ func startTracker(username string, emit emitFunc, cfg config) (controller, error
 	return startLive(username, emit, cfg)
 }
 
+// getSelfSigner lazily initializes the shared self-hosted signer (QuickJS +
+// Chrome TLS). QuickJS init is expensive (~seconds), so it is reused across
+// trackers.
+var (
+	selfSignerOnce sync.Once
+	selfSignerInst *selfSigner
+	selfSignerErr  error
+)
+
+func getSelfSigner() (*selfSigner, error) {
+	selfSignerOnce.Do(func() {
+		selfSignerInst, selfSignerErr = newSelfSigner()
+	})
+	return selfSignerInst, selfSignerErr
+}
+
 func startLive(username string, emit emitFunc, cfg config) (controller, error) {
 	opts := []gotiktoklive.TikTokLiveOption{gotiktoklive.DisableSigningLimitsValidation}
-	if cfg.SignAPIKey != "" {
-		opts = append(opts, gotiktoklive.SigningApiKey(cfg.SignAPIKey))
-	}
-	if cfg.SignServerURL != "" {
-		opts = append(opts, gotiktoklive.SigningUrl(cfg.SignServerURL))
+
+	if cfg.SignServerURL != "" || cfg.SignAPIKey != "" {
+		// Explicit external signer (Euler Stream or compatible).
+		if cfg.SignAPIKey != "" {
+			opts = append(opts, gotiktoklive.SigningApiKey(cfg.SignAPIKey))
+		}
+		if cfg.SignServerURL != "" {
+			opts = append(opts, gotiktoklive.SigningUrl(cfg.SignServerURL))
+		}
+	} else {
+		// Default: self-hosted signer (no third-party dependency).
+		ss, err := getSelfSigner()
+		if err != nil {
+			return nil, fmt.Errorf("self-hosted signer init: %w", err)
+		}
+		opts = append(opts, gotiktoklive.SigningFunc(ss.signFetch), gotiktoklive.SigningURLFunc(ss.signOnly))
 	}
 
 	t, err := gotiktoklive.NewTikTok(opts...)

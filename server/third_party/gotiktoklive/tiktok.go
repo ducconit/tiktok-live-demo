@@ -58,6 +58,8 @@ type TikTok struct {
 	wsTraceChan              chan struct{ direction, hex string }
 	wsTraceOut               *bufio.Writer
 	signerUrl                string
+	signFunc                 SignFunc
+	signURLFunc              SignURLFunc
 	getLimits                bool
 	limiter                  ratelimit.Limiter
 }
@@ -78,6 +80,8 @@ func NewTikTokWithApiKey(clientName, apiKey string, options ...TikTokLiveOption)
 	tiktok := TikTok{
 		c: &http.Client{
 			Jar: jar,
+			// Prevent indefinite hangs when TikTok or the signer stop responding.
+			Timeout: 15 * time.Second,
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
 				return http.ErrUseLastResponse
 			},

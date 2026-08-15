@@ -18,14 +18,10 @@ const (
 	urlUser      = "@%s/"
 	// Think this changed to room/enter/
 	urlRoomInfo = "room/info/"
-	urlRoomData = "webcast/fetch/"
+	urlRoomData = "im/fetch/"
 	urlGiftInfo = "gift/list/"
-	// added slash is intention to simplify the base signer url which is now configurable.
-	urlSignReq = "/webcast/fetch/"
 
-	urlCheckLive      = "room/check_alive/"
-	clientNameDefault = "gotiktok_live"
-	apiKeyDefault     = ""
+	urlCheckLive = "room/check_alive/"
 	// For some reason the user info needs user agent this way but wsUserAgent doesn't want it
 	userAgent   = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
 	wsUserAgent = "5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"

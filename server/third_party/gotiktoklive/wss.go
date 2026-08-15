@@ -54,6 +54,16 @@ func (l *Live) connect(addr string, params map[string]string) error {
 
 	wsURL := fmt.Sprintf("%s?%s", addr, vs.Encode())
 
+	// Sign the WebSocket URL (X-Bogus + X-Gnarly) — TikTok rejects unsigned
+	// handshakes with HTTP 200.
+	if l.t.signURLFunc != nil {
+		signed, err := l.t.signURLFunc(wsURL)
+		if err != nil {
+			return fmt.Errorf("Failed to sign websocket url: %w", err)
+		}
+		wsURL = signed
+	}
+
 	// Read proxies from HTTP env variables, HTTPS takes precedent
 	var proxyURI *url.URL
 	envVars := []string{"HTTP_PROXY", "HTTPS_PROXY"}
@@ -93,6 +103,7 @@ func (l *Live) connect(addr string, params map[string]string) error {
 		},
 		// NetDial:   proxy.Dial,
 		Protocols: []string{"echo-protocol"},
+		Timeout:   15 * time.Second,
 	}
 	conn, _, _, err := dialer.Dial(context.Background(), wsURL)
 	if err != nil {

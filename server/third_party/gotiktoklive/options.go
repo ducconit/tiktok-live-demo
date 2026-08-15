@@ -4,29 +4,35 @@ import "net/http"
 
 type TikTokLiveOption func(t *TikTok) error
 
-// SigningApiKey sets the singer API key.
-func SigningApiKey(apiKey string) TikTokLiveOption {
+// SignFunc signs a webcast URL and fetches it, returning the response body and
+// headers. It mirrors the Euler signer's /webcast/fetch/ behavior: the caller
+// passes an unsigned URL and gets back the signed fetch response (protobuf
+// body + headers incl. X-Set-TT-Cookie). A nil return body + nil error means
+// the signer produced no data (e.g. soft-blocked).
+type SignFunc func(reqUrl string) ([]byte, http.Header, error)
+
+// SigningFunc installs a self-hosted signer, replacing the default Euler
+// Stream signer. Disables signer rate-limit validation (not applicable to a
+// local signer).
+func SigningFunc(f SignFunc) TikTokLiveOption {
 	return func(t *TikTok) error {
-		t.apiKey = apiKey
+		t.signFunc = f
+		t.getLimits = false
 		return nil
 	}
 }
 
-// SigningUrl defines the signer. The default is https://tiktok.eulerstream.com. Supports any signer that supports the
-// signing api as defined by https://www.eulerstream.com/docs/openapi
-func SigningUrl(url string) TikTokLiveOption {
+// SignURLFunc signs a URL (returning the signed URL) without fetching it.
+// Used for the WebSocket handshake, which must be signed but is dialed with a
+// WebSocket client rather than fetched over HTTP.
+type SignURLFunc func(reqUrl string) (string, error)
+
+// SigningURLFunc installs a sign-only function for the WebSocket URL.
+func SigningURLFunc(f SignURLFunc) TikTokLiveOption {
 	return func(t *TikTok) error {
-		t.signerUrl = url
+		t.signURLFunc = f
 		return nil
 	}
-}
-
-// DisableSigningLimitsValidation will disable querying the signer for limits and using those as the reasonable limits
-// for signing requests per second. Instead, this library will be limited to signing only 5 signing requests per minute
-// and may limit functionality compared to the request limit the signer provides.
-func DisableSigningLimitsValidation(t *TikTok) error {
-	t.getLimits = false
-	return nil
 }
 
 // EnableExperimentalEvents enables experimental events that have not been figured out yet and the API for them is not

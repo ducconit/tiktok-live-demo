@@ -17,7 +17,6 @@ export function App() {
   useEffect(() => {
     const socket = new LiveSocket();
     socketRef.current = socket;
-    socket.connect();
 
     const unsubscribe = socket.onEvent((event) => {
       if (event.type === "status") {
@@ -68,7 +67,7 @@ export function App() {
             </span>
             <div>
               <h1 className="text-lg font-bold leading-none">TikTok Bar</h1>
-              <p className="text-xs text-zinc-500">LIVE event monitor</p>
+              <p className="text-xs text-zinc-500">LIVE event monitor · v1.1</p>
             </div>
           </div>
           <ConnectBar

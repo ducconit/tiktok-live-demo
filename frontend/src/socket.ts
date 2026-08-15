@@ -5,8 +5,6 @@ export class LiveSocket {
   private listeners = new Set<(event: LiveEvent) => void>();
   private url: string;
   private queue: unknown[] = [];
-  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-  private closedByUser = false;
 
   constructor() {
     const base =
@@ -17,11 +15,6 @@ export class LiveSocket {
     this.url = `${proto}://${host}/ws`;
   }
 
-  connect(): void {
-    this.closedByUser = false;
-    this.open();
-  }
-
   private open(): void {
     if (this.ws) return;
     const ws = new WebSocket(this.url);
@@ -29,8 +22,7 @@ export class LiveSocket {
 
     ws.onopen = () => {
       while (this.queue.length > 0) {
-        const msg = this.queue.shift();
-        if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+        ws.send(JSON.stringify(this.queue.shift()));
       }
     };
 
@@ -45,16 +37,7 @@ export class LiveSocket {
 
     ws.onclose = () => {
       this.ws = null;
-      if (!this.closedByUser) this.scheduleReconnect();
     };
-  }
-
-  private scheduleReconnect(): void {
-    if (this.reconnectTimer) return;
-    this.reconnectTimer = setTimeout(() => {
-      this.reconnectTimer = null;
-      this.open();
-    }, 1500);
   }
 
   onEvent(fn: (event: LiveEvent) => void): () => void {
@@ -65,19 +48,19 @@ export class LiveSocket {
   }
 
   connectRoom(username: string): void {
+    this.open();
     this.send({ action: "connect", username });
   }
 
   disconnectRoom(): void {
+    // Send the disconnect command and let the server stop the tracker.
+    // Do NOT close the socket here — closing immediately after send can drop
+    // the message before it flushes, so the server never sees "disconnect".
     this.send({ action: "disconnect" });
   }
 
   disconnect(): void {
-    this.closedByUser = true;
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
+    this.queue = [];
     this.ws?.close();
     this.ws = null;
   }
@@ -88,6 +71,5 @@ export class LiveSocket {
       return;
     }
     this.queue.push(obj);
-    if (!this.ws) this.open();
   }
 }
