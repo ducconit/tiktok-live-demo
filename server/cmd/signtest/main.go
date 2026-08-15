@@ -88,7 +88,6 @@ func main() {
 	}
 
 	t, err := gotiktoklive.NewTikTok(
-		gotiktoklive.DisableSigningLimitsValidation,
 		gotiktoklive.SigningFunc(signFetch),
 		gotiktoklive.SigningURLFunc(signOnly),
 	)

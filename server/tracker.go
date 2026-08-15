@@ -112,24 +112,14 @@ func getSelfSigner() (*selfSigner, error) {
 }
 
 func startLive(username string, emit emitFunc, cfg config) (controller, error) {
-	opts := []gotiktoklive.TikTokLiveOption{gotiktoklive.DisableSigningLimitsValidation}
+	opts := []gotiktoklive.TikTokLiveOption{}
 
-	if cfg.SignServerURL != "" || cfg.SignAPIKey != "" {
-		// Explicit external signer (Euler Stream or compatible).
-		if cfg.SignAPIKey != "" {
-			opts = append(opts, gotiktoklive.SigningApiKey(cfg.SignAPIKey))
-		}
-		if cfg.SignServerURL != "" {
-			opts = append(opts, gotiktoklive.SigningUrl(cfg.SignServerURL))
-		}
-	} else {
-		// Default: self-hosted signer (no third-party dependency).
-		ss, err := getSelfSigner()
-		if err != nil {
-			return nil, fmt.Errorf("self-hosted signer init: %w", err)
-		}
-		opts = append(opts, gotiktoklive.SigningFunc(ss.signFetch), gotiktoklive.SigningURLFunc(ss.signOnly))
+	// Self-hosted signer (QuickJS) — no third-party dependency.
+	ss, err := getSelfSigner()
+	if err != nil {
+		return nil, fmt.Errorf("self-hosted signer init: %w", err)
 	}
+	opts = append(opts, gotiktoklive.SigningFunc(ss.signFetch), gotiktoklive.SigningURLFunc(ss.signOnly))
 
 	t, err := gotiktoklive.NewTikTok(opts...)
 	if err != nil {

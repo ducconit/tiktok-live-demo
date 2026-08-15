@@ -9,7 +9,7 @@
 These tags are bogus and have been retracted and should not be grabbed via `go get` any longer. As of now v0 tags are the only valid tags.
 
 ## Current Known working state of implementation
-- [x] Using the new signing server and endpoints and can provide API key and secret
+- [x] Self-hosted signing via pluggable SignFunc (no third-party sign server)
 - [x] working live user and room id tracking
 - [x] updated protobuf version 3 messages and synced with python's types
 - [x] Websocket event system
@@ -95,19 +95,11 @@ for event := range live.Events {
 Options are used when creating a new TikTokLive instance and are used to modify the default behavior of the system in various ways.
 
 ```go
-// SigningApiKey sets the singer API key.
-func SigningApiKey(apiKey string) TikTokLiveOption {}
+// SigningFunc installs a self-hosted signer (signs + fetches a webcast URL).
+func SigningFunc(f SignFunc) TikTokLiveOption {}
 
-// SigningUrl defines the signer. The default is https://tiktok.eulerstream.com. Supports
-// any signer that supports the signing api as defined by
-// https://www.eulerstream.com/docs/openapi
-func (url string) TikTokLiveOption {}
-
-// DisableSigningLimitsValidation will disable querying the signer for limits and using
-// those as the reasonable limits for signing requests per second. Instead, this library
-// will be limited to signing only 5 signing requests per minute and may limit
-// functionality compared to the request limit the signer provides.
-func DisableSigningLimitsValidation(t *TikTok) {}
+// SigningURLFunc installs a sign-only function for the WebSocket URL.
+func SigningURLFunc(f SignURLFunc) TikTokLiveOption {}
 
 // EnableExperimentalEvents enables experimental events that have not been figured out yet
 // and the API for them is not stable. It may also induce additional logging that might be
@@ -126,9 +118,8 @@ func EnableWSTrace(file string) func(t *TikTok) {}
 ```
 ### Example Usage
 ```go
-// Create TikTok instance, do not reconnect when tracking and use an API key for the
-// signer
-tiktok := gotiktoklive.NewTikTok(SigningApiKey("<secretkey>"), DisableSigningLimitsValidation)
+// Create TikTok instance with a self-hosted signer.
+tiktok := gotiktoklive.NewTikTok(gotiktoklive.SigningFunc(mySignFetch))
 
 ```
 ## Methods

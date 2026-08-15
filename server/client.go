@@ -187,7 +187,7 @@ func friendlyError(err error) string {
 	lower := strings.ToLower(msg)
 	switch {
 	case strings.Contains(lower, "rate limit") || strings.Contains(lower, "429"):
-		return "Đã đạt giới hạn sign (rate limit) của Euler Stream. Đợi vài phút, hoặc thêm SIGN_API_KEY (miễn phí tại eulerstream.com)."
+		return "Đã đạt giới hạn request. Đợi vài phút rồi thử lại."
 	case strings.Contains(lower, "offline") || strings.Contains(lower, "not live"):
 		return "User này hiện không đang LIVE."
 	case strings.Contains(lower, "timeout") || strings.Contains(lower, "deadline"):

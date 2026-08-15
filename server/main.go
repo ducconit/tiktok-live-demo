@@ -68,11 +68,7 @@ func main() {
 
 	addr := ":" + strconv.Itoa(cfg.Port)
 	logf("[tiktok-bar] server listening on http://localhost%s", addr)
-	if cfg.SignAPIKey == "" && cfg.SignServerURL == "" {
-		logf("[tiktok-bar] signing: self-hosted (QuickJS) — no third-party sign server")
-	} else {
-		logf("[tiktok-bar] signing: external sign server (%s)", cfg.SignServerURL)
-	}
+	logf("[tiktok-bar] signing: self-hosted (QuickJS) — no third-party sign server")
 
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatalf("server: %v", err)

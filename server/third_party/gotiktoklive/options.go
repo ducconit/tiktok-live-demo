@@ -5,19 +5,14 @@ import "net/http"
 type TikTokLiveOption func(t *TikTok) error
 
 // SignFunc signs a webcast URL and fetches it, returning the response body and
-// headers. It mirrors the Euler signer's /webcast/fetch/ behavior: the caller
-// passes an unsigned URL and gets back the signed fetch response (protobuf
-// body + headers incl. X-Set-TT-Cookie). A nil return body + nil error means
-// the signer produced no data (e.g. soft-blocked).
+// headers (protobuf body + headers incl. X-Set-TT-Cookie). A nil return body +
+// nil error means the signer produced no data (e.g. soft-blocked).
 type SignFunc func(reqUrl string) ([]byte, http.Header, error)
 
-// SigningFunc installs a self-hosted signer, replacing the default Euler
-// Stream signer. Disables signer rate-limit validation (not applicable to a
-// local signer).
+// SigningFunc installs a self-hosted signer.
 func SigningFunc(f SignFunc) TikTokLiveOption {
 	return func(t *TikTok) error {
 		t.signFunc = f
-		t.getLimits = false
 		return nil
 	}
 }

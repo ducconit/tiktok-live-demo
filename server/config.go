@@ -7,10 +7,8 @@ import (
 )
 
 type config struct {
-	Port          int
-	SignAPIKey    string
-	SignServerURL string
-	LogDir        string
+	Port   int
+	LogDir string
 }
 
 func loadConfig() config {
@@ -22,8 +20,6 @@ func loadConfig() config {
 			cfg.Port = p
 		}
 	}
-	cfg.SignAPIKey = os.Getenv("SIGN_API_KEY")
-	cfg.SignServerURL = os.Getenv("SIGN_SERVER_URL")
 	if v := os.Getenv("LOG_DIR"); v != "" {
 		cfg.LogDir = v
 	}

@@ -20,8 +20,7 @@ const signUA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.
 
 // selfSigner implements gotiktoklive.SignFunc using the local QuickJS signer
 // (X-Bogus + X-Gnarly + msToken) plus a Chrome-fingerprint TLS client. It
-// mirrors the Euler signer's behavior: sign the URL, fetch it, return the
-// response body + headers.
+// signs the URL, fetches it, and returns the response body + headers.
 type selfSigner struct {
 	mu      sync.Mutex
 	signer  *signer.Signer

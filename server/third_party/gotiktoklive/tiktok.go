@@ -7,9 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go.uber.org/ratelimit"
-	"io"
-	"log/slog"
 	"maps"
 	"net/http"
 	"net/http/cookiejar"
@@ -23,18 +20,11 @@ import (
 	"time"
 )
 
-const (
-	defaultSignerURL = "https://tiktok.eulerstream.com"
-)
-
 // TikTok allows you to track and discover current live streams.
 type TikTok struct {
 	c    *http.Client
 	wg   *sync.WaitGroup
 	done func() <-chan struct{}
-
-	streams int
-	mu      *sync.Mutex
 
 	// Pass extra debug messages to debugHandler
 	Debug bool
@@ -48,8 +38,6 @@ type TikTok struct {
 	errHandler   func(...interface{})
 
 	proxy                    *neturl.URL
-	apiKey                   string
-	clientName               string
 	shouldReconnect          bool
 	enableExperimentalEvents bool
 	enableExtraDebug         bool
@@ -57,22 +45,14 @@ type TikTok struct {
 	wsTraceFile              string
 	wsTraceChan              chan struct{ direction, hex string }
 	wsTraceOut               *bufio.Writer
-	signerUrl                string
 	signFunc                 SignFunc
 	signURLFunc              SignURLFunc
-	getLimits                bool
-	limiter                  ratelimit.Limiter
 }
 
 // NewTikTok creates a tiktok instance that allows you to track live streams and
 //
 //	discover current livestreams.
 func NewTikTok(options ...TikTokLiveOption) (*TikTok, error) {
-	return NewTikTokWithApiKey(clientNameDefault, apiKeyDefault, options...)
-}
-
-// NewTikTokWithApiKey allows to use an ApiKey with the default signer.
-func NewTikTokWithApiKey(clientName, apiKey string, options ...TikTokLiveOption) (*TikTok, error) {
 	jar, _ := cookiejar.New(nil)
 	wg := sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -80,7 +60,7 @@ func NewTikTokWithApiKey(clientName, apiKey string, options ...TikTokLiveOption)
 	tiktok := TikTok{
 		c: &http.Client{
 			Jar: jar,
-			// Prevent indefinite hangs when TikTok or the signer stop responding.
+			// Prevent indefinite hangs when TikTok stops responding.
 			Timeout: 15 * time.Second,
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
 				return http.ErrUseLastResponse
@@ -89,16 +69,11 @@ func NewTikTokWithApiKey(clientName, apiKey string, options ...TikTokLiveOption)
 		},
 		wg:              &wg,
 		done:            ctx.Done,
-		mu:              &sync.Mutex{},
 		infoHandler:     defaultLogHandler,
 		warnHandler:     defaultLogHandler,
 		debugHandler:    routineErrHandler,
 		errHandler:      routineErrHandler,
-		signerUrl:       defaultSignerURL,
-		clientName:      clientName,
-		apiKey:          apiKey,
 		shouldReconnect: true,
-		getLimits:       true,
 	}
 	envs := []string{"HTTP_PROXY", "HTTPS_PROXY"}
 	var optionsErr []error
@@ -115,20 +90,6 @@ func NewTikTokWithApiKey(clientName, apiKey string, options ...TikTokLiveOption)
 	if err != nil {
 		cancel()
 		return nil, err
-	}
-	if tiktok.getLimits {
-		limits, err := GetSignerLimits(tiktok.signerUrl, tiktok.apiKey)
-		if err != nil {
-			cancel()
-			return nil, fmt.Errorf("cannot get signing limits: %w", err)
-		}
-		slog.Debug("limits found, using per minute limit", "day", limits.Day, "hour", limits.Hour, "minute", limits.Minute)
-		limiter := ratelimit.New(limits.Minute.Max, ratelimit.Per(1*time.Minute), ratelimit.WithoutSlack)
-		tiktok.limiter = limiter
-	} else {
-		slog.Debug("Request limits set to sane default of 10 per minute, for more enable GetLimits option to use signer specified limits")
-		limiter := ratelimit.New(10, ratelimit.Per(1*time.Minute), ratelimit.WithoutSlack)
-		tiktok.limiter = limiter
 	}
 
 	if tiktok.enableWSTrace {
@@ -365,38 +326,4 @@ func setupInterruptHandler(f func(chan os.Signal)) {
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go f(c)
-}
-
-// GetSignerLimits returns the limits as provided by the signer.  This supports eulerstream signer and any other signers that
-// support the same API endpoints
-//
-// Example:
-//
-//	limits, _ := GetSignerLimits("https://tiktok.eulerstream.com", "MyApiKey")
-//	fmt.Printf("limits Day: %d, Hour: %d, Minutes %d\n", limits.Day, limits.Hour, limits.Minute)
-func GetSignerLimits(signer string, apiKey string) (SigningLimits, error) {
-	resp, err := http.Get(fmt.Sprintf("%s/webcast/rate_limits?apiKey=%s", signer, apiKey))
-	if err != nil {
-		return SigningLimits{}, fmt.Errorf("cannot get rate_limts: %s", err)
-	}
-	if resp.StatusCode != http.StatusOK {
-		defer func(Body io.ReadCloser) {
-			_ = Body.Close()
-		}(resp.Body)
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return SigningLimits{}, fmt.Errorf("bad status getting rate_limts %s(%d), cannot read body: %w", resp.Status, resp.StatusCode, err)
-		}
-		return SigningLimits{}, fmt.Errorf("bad status getting rate_limits %s(%d), %s", resp.Status, resp.StatusCode, string(body))
-	}
-	jsonR := resp.Body
-	defer func(jsonR io.ReadCloser) {
-		_ = jsonR.Close()
-	}(jsonR)
-	limits := SigningLimits{}
-	err = json.NewDecoder(jsonR).Decode(&limits)
-	if err != nil {
-		return SigningLimits{}, err
-	}
-	return limits, nil
 }

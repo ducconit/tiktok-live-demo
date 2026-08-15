@@ -43,23 +43,23 @@ npm run dev                 # http://localhost:5173
 Mở http://localhost:5173, nhập `@username` của một streamer **đang LIVE** (vd `nhu2hand2`), bấm
 **Kết nối** → nhận event real-time.
 
-### Cấu hình signing (tùy chọn)
+### Signing (self-hosted)
 
-`gotiktoklive` ủy thác việc ký WebSocket cho sign server của Euler Stream (`tiktok.eulerstream.com`)
-theo mặc định. **Không cần API key** vẫn kết nối được (anonymous), nhưng bị rate-limit và có thể
-không ổn định. Tạo key tại https://www.eulerstream.com để tăng giới hạn và độ ổn định:
+Server tự ký WebSocket hoàn toàn tại chỗ bằng **QuickJS** (chạy `webmssdk.js` của TikTok) —
+sinh `X-Bogus` + `X-Gnarly` + `msToken`, **không cần bất kỳ dịch vụ sign bên thứ ba nào**.
 
-```env
-# server/.env
-SIGN_API_KEY=your-euler-stream-key
-# SIGN_SERVER_URL=https://your-custom-sign-server.com   # tùy chọn
+Yêu cầu build: `CGO_ENABLED=1` (QuickJS là C, biên dịch qua cgo):
+
+```bash
+cd server
+CGO_ENABLED=1 go run .
 ```
 
 ## Production build
 
 ```bash
 cd frontend && npm run build      # tạo frontend/dist
-cd ../server && go build -o bin/tiktok-bar . && ./bin/tiktok-bar   # tự serve frontend/dist tại :3001
+cd ../server && CGO_ENABLED=1 go build -o bin/tiktok-bar . && ./bin/tiktok-bar   # tự serve frontend/dist tại :3001
 ```
 
 ## API / WebSocket

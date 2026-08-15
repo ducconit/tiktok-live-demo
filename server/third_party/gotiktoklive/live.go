@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -59,9 +58,6 @@ func (t *TikTok) newLive(roomId string) *Live {
 		Events:   make(chan Event, DEFAULT_EVENTS_CHAN_SIZE),
 		chanSize: DEFAULT_EVENTS_CHAN_SIZE,
 	}
-	t.mu.Lock()
-	t.streams += 1
-	t.mu.Unlock()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	live.cancel = cancel
@@ -78,9 +74,6 @@ func (t *TikTok) newLive(roomId string) *Live {
 				live.wss.Close()
 			}
 			live.wg.Wait()
-			t.mu.Lock()
-			t.streams -= 1
-			t.mu.Unlock()
 		})
 	}
 
@@ -480,29 +473,7 @@ func (t *TikTok) signURL(reqUrl string, options *reqOptions) ([]byte, http.Heade
 	if t.signFunc != nil {
 		return t.signFunc(reqUrl)
 	}
-	query := map[string]string{
-		"client":  t.clientName,
-		"uuc":     strconv.Itoa(t.streams),
-		"url":     reqUrl,
-		"room_id": options.Query["room_id"],
-	}
-	if t.apiKey != "" {
-		query["apiKey"] = t.apiKey
-	}
-	// A badly formed implementation using this library might spam connection requests (ask me
-	// how I know) this limiter is a safety guard to never go over the signer's advertised
-	// capabilities so the client does not exceed limits or get banned from the signer.
-	t.limiter.Take()
-	body, header, err := t.sendRequest(&reqOptions{
-		URI:      t.signerUrl,
-		Endpoint: urlSignReq,
-		Query:    query,
-	}, nil)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, fmt.Sprintf("Failed to sign request: %s", body))
-	}
-
-	return body, header, nil
+	return nil, nil, fmt.Errorf("no signing function configured (call SigningFunc)")
 }
 
 // Only able to get this while logged in
