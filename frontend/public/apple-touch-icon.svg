@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180">
+  <defs>
+    <linearGradient id="appleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee" />
+      <stop offset="100%" stop-color="#f43f5e" />
+    </linearGradient>
+    <filter id="appleShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#09090b" flood-opacity="0.22" />
+    </filter>
+  </defs>
+
+  <!-- iOS Icon Base -->
+  <rect width="180" height="180" rx="40" fill="url(#appleGrad)" />
+  
+  <!-- Subtle Highlight Border -->
+  <rect x="3" y="3" width="174" height="174" rx="37" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-opacity="0.3" />
+
+  <!-- Center Master Glyph -->
+  <g filter="url(#appleShadow)" fill="#ffffff">
+    <!-- Music Note Head -->
+    <ellipse cx="63" cy="118" rx="16" ry="13.5" transform="rotate(-20 63 118)" />
+    
+    <!-- Music Note Stem rising into Play Structure -->
+    <path d="M 72 113 L 72 56 C 72 51 76 47.5 81 47.5 C 84 47.5 87 49 89 51 L 122 80 C 127.5 85 127.5 93.5 122 98.5 L 89 127.5 C 87 129.5 84 131 81 131 C 76 131 72 127.5 72 122.5 Z" />
+    
+    <!-- Inner Accent Cutout -->
+    <path d="M 87 71 L 109 88 C 111 90 111 93.5 109 95.5 L 87 113 C 84 115 80.5 113 80.5 109.5 L 80.5 74.5 C 80.5 71 84 69 87 71 Z" fill="#09090b" fill-opacity="0.18" />
+  </g>
+
+  <!-- Live Pulse Waves -->
+  <path d="M 131 63 A 36 36 0 0 1 131 115" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" />
+  <path d="M 144 50 A 54 54 0 0 1 144 128" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" opacity="0.65" />
+</svg>

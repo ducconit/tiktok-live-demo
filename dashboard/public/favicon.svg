@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="favGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee" />
+      <stop offset="100%" stop-color="#f43f5e" />
+    </linearGradient>
+  </defs>
+
+  <!-- Base Rounded Container -->
+  <rect width="64" height="64" rx="14" fill="url(#favGrad)" />
+
+  <!-- Simplified Crisp Glyph -->
+  <g fill="#ffffff">
+    <!-- Music note circle base -->
+    <ellipse cx="23" cy="42" rx="6.5" ry="5.5" transform="rotate(-20 23 42)" />
+    <!-- Note Stem & Play Triangle -->
+    <path d="M 27 40 L 27 20 C 27 18 28.5 16.8 30.2 16.8 C 31.2 16.8 32.2 17.3 33 18 L 44.5 28.5 C 46.5 30.2 46.5 33.2 44.5 35 L 33 45.5 C 32.2 46.2 31.2 46.8 30.2 46.8 C 28.5 46.8 27 45.5 27 43.8 Z" />
+  </g>
+
+  <!-- Live Pulse Wave -->
+  <path d="M 48 23 A 14 14 0 0 1 48 41" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" />
+</svg>

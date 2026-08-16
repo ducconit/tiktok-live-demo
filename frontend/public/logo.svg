@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee" />
+      <stop offset="100%" stop-color="#f43f5e" />
+    </linearGradient>
+    <linearGradient id="glyphGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f8fafc" />
+    </linearGradient>
+    <filter id="subtleShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#09090b" flood-opacity="0.25" />
+    </filter>
+  </defs>
+
+  <!-- Rounded App Icon Base -->
+  <rect width="512" height="512" rx="96" fill="url(#bgGrad)" />
+
+  <!-- Inner Soft Highlight Layer -->
+  <rect x="8" y="8" width="496" height="496" rx="88" fill="none" stroke="#ffffff" stroke-width="2" stroke-opacity="0.25" />
+
+  <!-- Center Master Glyph (Music Note + Play Button + Live Soundwaves) -->
+  <g filter="url(#subtleShadow)" fill="url(#glyphGlow)">
+    <!-- Music Note Head (Bottom Left) -->
+    <ellipse cx="178" cy="336" rx="46" ry="38" transform="rotate(-20 178 336)" />
+    
+    <!-- Music Note Stem rising into Play Structure -->
+    <path d="M 204 322 L 204 158 C 204 144 216 134 230 134 C 238 134 246 138 252 144 L 346 226 C 362 240 362 264 346 278 L 252 360 C 246 366 238 370 230 370 C 216 370 204 360 204 346 Z" />
+    
+    <!-- Inner Play Cutout Accent (Transparent Dark/Gradient depth) -->
+    <path d="M 246 202 L 308 252 C 314 257 314 267 308 272 L 246 322 C 238 328 228 322 228 312 L 228 212 C 228 202 238 196 246 202 Z" fill="#09090b" fill-opacity="0.18" />
+  </g>
+
+  <!-- Live Broadcast Pulse Arcs (Right Side) -->
+  <path d="M 372 178 A 104 104 0 0 1 372 326" fill="none" stroke="#ffffff" stroke-width="22" stroke-linecap="round" />
+  <path d="M 408 142 A 156 156 0 0 1 408 362" fill="none" stroke="#ffffff" stroke-width="20" stroke-linecap="round" opacity="0.65" />
+</svg>

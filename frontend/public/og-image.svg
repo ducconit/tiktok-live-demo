@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee" />
+      <stop offset="100%" stop-color="#f43f5e" />
+    </linearGradient>
+
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#22d3ee" />
+      <stop offset="100%" stop-color="#f43f5e" />
+    </linearGradient>
+
+    <radialGradient id="cyanBlob" cx="20%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.32" />
+      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0" />
+    </radialGradient>
+
+    <radialGradient id="roseBlob" cx="80%" cy="70%" r="60%">
+      <stop offset="0%" stop-color="#f43f5e" stop-opacity="0.28" />
+      <stop offset="100%" stop-color="#f43f5e" stop-opacity="0" />
+    </radialGradient>
+
+    <filter id="logoShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="28" flood-color="#000000" flood-opacity="0.6" />
+    </filter>
+
+    <filter id="panelGlow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="20" flood-color="#09090b" flood-opacity="0.8" />
+    </filter>
+
+    <!-- Subtle Grid Background -->
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#27272a" stroke-width="1" stroke-opacity="0.3" />
+    </pattern>
+  </defs>
+
+  <!-- Dark Ink Background -->
+  <rect width="1200" height="630" fill="#09090b" />
+
+  <!-- Ambient Grid & Gradient Blobs -->
+  <rect width="1200" height="630" fill="url(#grid)" />
+  <rect width="1200" height="630" fill="url(#cyanBlob)" />
+  <rect width="1200" height="630" fill="url(#roseBlob)" />
+
+  <!-- Main Container Card -->
+  <g filter="url(#panelGlow)">
+    <rect x="70" y="65" width="1060" height="500" rx="32" fill="#18181b" fill-opacity="0.88" stroke="#27272a" stroke-width="1.5" />
+    <rect x="70" y="65" width="1060" height="500" rx="32" fill="none" stroke="url(#brandGrad)" stroke-width="1" stroke-opacity="0.3" />
+  </g>
+
+  <!-- Left Side: Brand Logo (240x240) -->
+  <g transform="translate(130, 195)" filter="url(#logoShadow)">
+    <!-- Logo Badge Base -->
+    <rect width="240" height="240" rx="52" fill="url(#brandGrad)" />
+    <rect x="4" y="4" width="232" height="232" rx="48" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-opacity="0.3" />
+
+    <!-- Logo Glyph -->
+    <g fill="#ffffff">
+      <!-- Note head -->
+      <ellipse cx="84" cy="158" rx="22" ry="18" transform="rotate(-20 84 158)" />
+      <!-- Stem & Play -->
+      <path d="M 96 151 L 96 74 C 96 68 102 63 108 63 C 112 63 116 65 119 68 L 163 106 C 171 113 171 125 163 131 L 119 170 C 116 172 112 174 108 174 C 102 174 96 170 96 163 Z" />
+      <!-- Inner cutout -->
+      <path d="M 116 95 L 145 119 C 148 121 148 126 145 128 L 116 152 C 112 155 107 152 107 148 L 107 99 C 107 95 112 92 116 95 Z" fill="#09090b" fill-opacity="0.2" />
+    </g>
+
+    <!-- Sound Arcs -->
+    <path d="M 175 84 A 48 48 0 0 1 175 154" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" />
+    <path d="M 192 67 A 72 72 0 0 1 192 171" fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round" opacity="0.65" />
+  </g>
+
+  <!-- Right Side: Content & Typography -->
+  <g transform="translate(430, 145)">
+    <!-- Top Live Badge Pill -->
+    <g transform="translate(0, 20)">
+      <rect width="176" height="34" rx="17" fill="#27272a" fill-opacity="0.8" stroke="#f43f5e" stroke-width="1.2" stroke-opacity="0.6" />
+      <!-- Pulsing Dot -->
+      <circle cx="20" cy="17" r="5" fill="#f43f5e" />
+      <circle cx="20" cy="17" r="9" fill="#f43f5e" fill-opacity="0.25" />
+      <!-- Badge Label -->
+      <text x="36" y="22" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" letter-spacing="1.5">LIVE MONITOR</text>
+    </g>
+
+    <!-- Brand Name / Headline -->
+    <text x="0" y="118" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="52" font-weight="800" letter-spacing="-1">
+      TikTok Live <tspan fill="url(#textGrad)">Platform</tspan>
+    </text>
+
+    <!-- Subtitle -->
+    <text x="0" y="165" fill="#a1a1aa" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="22" font-weight="400" letter-spacing="-0.2">
+      LIVE event monitor &amp; real-time stream intelligence
+    </text>
+
+    <!-- Feature Highlights / Tags -->
+    <g transform="translate(0, 215)">
+      <!-- Feature Tag 1 -->
+      <g transform="translate(0, 0)">
+        <rect width="180" height="42" rx="10" fill="#27272a" fill-opacity="0.6" stroke="#3f3f46" stroke-width="1" />
+        <circle cx="20" cy="21" r="4" fill="#22d3ee" />
+        <text x="34" y="26" fill="#f4f4f5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14" font-weight="500">Real-time Stream</text>
+      </g>
+
+      <!-- Feature Tag 2 -->
+      <g transform="translate(196, 0)">
+        <rect width="176" height="42" rx="10" fill="#27272a" fill-opacity="0.6" stroke="#3f3f46" stroke-width="1" />
+        <circle cx="20" cy="21" r="4" fill="#f43f5e" />
+        <text x="34" y="26" fill="#f4f4f5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14" font-weight="500">Event Tracking</text>
+      </g>
+
+      <!-- Feature Tag 3 -->
+      <g transform="translate(388, 0)">
+        <rect width="180" height="42" rx="10" fill="#27272a" fill-opacity="0.6" stroke="#3f3f46" stroke-width="1" />
+        <circle cx="20" cy="21" r="4" fill="#22d3ee" />
+        <text x="34" y="26" fill="#f4f4f5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14" font-weight="500">Live Analytics</text>
+      </g>
+    </g>
+  </g>
+</svg>
