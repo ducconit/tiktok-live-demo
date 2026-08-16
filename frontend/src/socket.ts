@@ -53,10 +53,14 @@ export class LiveSocket {
   }
 
   disconnectRoom(): void {
-    // Send the disconnect command and let the server stop the tracker.
-    // Do NOT close the socket here — closing immediately after send can drop
-    // the message before it flushes, so the server never sees "disconnect".
-    this.send({ action: "disconnect" });
+    // Flush the disconnect command so the server stops the tracker, then
+    // fully close the socket so no reconnect or stale state remains.
+    this.queue = [];
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ action: "disconnect" }));
+    }
+    this.ws?.close();
+    this.ws = null;
   }
 
   disconnect(): void {
