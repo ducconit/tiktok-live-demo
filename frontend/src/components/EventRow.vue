@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { Badge } from "@/components/ui/badge";
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import type { LiveEvent, User } from "@/types";
 
 const props = defineProps<{ event: LiveEvent }>();
@@ -99,18 +99,10 @@ const uniqueId = computed(() => user.value?.uniqueId);
 <template>
   <li class="flex items-start gap-3 rounded-lg border border-border/60 bg-ink/40 px-3 py-2.5">
     <template v-if="user">
-      <Avatar
-        v-if="user.profilePictureUrl"
-        :src="user.profilePictureUrl"
-        :alt="nickname"
-        class="mt-0.5 h-9 w-9"
-      />
-      <div
-        v-else
-        class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-sm text-zinc-500"
-      >
-        {{ meta.icon }}
-      </div>
+      <Avatar class="mt-0.5 h-9 w-9">
+        <AvatarImage v-if="user.profilePictureUrl" :src="user.profilePictureUrl" :alt="nickname" />
+        <AvatarFallback>{{ meta.icon }}</AvatarFallback>
+      </Avatar>
 
       <div class="min-w-0 flex-1">
         <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">

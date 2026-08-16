@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { Card } from "@/components/ui/card";
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import type { RoomInfo, StatusData } from "@/types";
 
 const props = defineProps<{
@@ -35,18 +35,10 @@ const resolvedViewers = computed(
       <div class="p-5">
         <div class="flex items-center gap-3">
           <div class="relative">
-            <Avatar
-              v-if="avatar"
-              :src="avatar"
-              :alt="nickname"
-              class="h-16 w-16 border border-border"
-            />
-            <div
-              v-else
-              class="flex h-16 w-16 items-center justify-center rounded-full border border-border bg-zinc-800 text-2xl text-zinc-500"
-            >
-              @
-            </div>
+            <Avatar class="h-16 w-16 border border-border">
+              <AvatarImage v-if="avatar" :src="avatar" :alt="nickname" />
+              <AvatarFallback class="text-2xl">@</AvatarFallback>
+            </Avatar>
             <span
               class="absolute -bottom-0 -right-0 h-4 w-4 rounded-full border-2 border-card"
               :class="meta.dot"
