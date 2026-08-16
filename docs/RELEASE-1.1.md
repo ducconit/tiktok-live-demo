@@ -29,6 +29,11 @@ Bản 1.1.0 **migrate toàn bộ frontend từ React sang Vue** với stack hi�
 - **Dark theme** qua shadcn-vue CSS variables (primary cyan, destructive red — giữ bảng màu cũ).
 - Giữ nguyên **fix nút Dừng** (button `type="button"`, không auto-reconnect).
 
+### Fixes
+
+- **Avatar hiển thị đúng**: dùng `AvatarImage` + `AvatarFallback` (shadcn/reka-ui) thay vì `<span>`/`<div>`
+  thủ công — có ảnh thì hiện ảnh, không có ảnh thì fallback "@" hoặc icon event.
+
 ### Testing
 
 - **Unit (vitest)**: 10 tests — `socket.test.ts` (LiveSocket: queue/connect/disconnect/events),
