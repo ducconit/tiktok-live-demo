@@ -32,9 +32,20 @@ else
 MKDIR := mkdir -p
 endif
 
-.PHONY: dev down logs ps migrate migrate-up migrate-down migrate-status seed sqlc-gen mock-gen test test-coverage bench admin i18n-merge lint build new-project
+.PHONY: dev down logs ps migrate migrate-up migrate-down migrate-status seed sqlc-gen mock-gen test test-coverage bench admin i18n-merge lint build new-project setup watch watch-backend watch-frontend watch-dashboard
 
-# ---- Docker compose (dev) ----dev:
+# ---- Setup (cài deps lần đầu — không cần docker) ----
+setup:
+	@echo "▶ backend: go mod download"
+	cd backend && go mod download
+	@echo "▶ frontend: bun install"
+	cd frontend && bun install
+	@echo "▶ dashboard: bun install"
+	cd dashboard && bun install
+	@echo "✅ Setup xong — chạy 'make watch' (dev local) hoặc 'make dev' (docker)"
+
+# ---- Docker compose (dev) ----
+dev:
 	docker compose up -d --build
 	@echo "Backend : http://localhost:$(FORWARD_API_PORT)"
 	@echo "Dashboard: http://localhost:$(FORWARD_DASHBOARD_PORT)"
@@ -42,6 +53,34 @@ endif
 	@echo "Sockudo  : http://localhost:$(FORWARD_SOCKUDO_PORT)"
 	@echo "Mailpit : http://localhost:$(FORWARD_MAILPIT_PORT)"
 	@echo "MinIO   : http://localhost:$(FORWARD_MINIO_CONSOLE_PORT)"
+
+# ---- Watch (hot reload — chạy LOCAL, không cần docker) ----
+# `make watch` = chạy đồng thời backend (air) + frontend + dashboard (bun dev),
+# Ctrl-C sẽ kill cả 3.
+# Port local: frontend $(FORWARD_FRONTEND_PORT) / dashboard $(FORWARD_DASHBOARD_PORT)
+# — khác port mặc định 5173 của vite để chạy được cả 2 app cùng lúc.
+watch:
+	@echo "▶ Backend  : cd backend && air (hot reload)"
+	@echo "▶ Frontend : http://localhost:$(FORWARD_FRONTEND_PORT) (bun dev)"
+	@echo "▶ Dashboard: http://localhost:$(FORWARD_DASHBOARD_PORT) (bun dev)"
+	@echo "▶ Ctrl-C để dừng tất cả"
+	@trap 'kill 0' INT TERM EXIT; \
+	(cd backend && CGO_ENABLED=1 air) & \
+	(cd frontend && bun run dev --port $(FORWARD_FRONTEND_PORT)) & \
+	(cd dashboard && bun run dev --port $(FORWARD_DASHBOARD_PORT)) & \
+	wait
+
+watch-backend:
+	@echo "▶ Backend — air (hot reload) — CGO_ENABLED=1 (QuickJS signer)"
+	cd backend && CGO_ENABLED=1 air
+
+watch-frontend:
+	@echo "▶ Frontend — http://localhost:$(FORWARD_FRONTEND_PORT)"
+	cd frontend && bun run dev --port $(FORWARD_FRONTEND_PORT)
+
+watch-dashboard:
+	@echo "▶ Dashboard — http://localhost:$(FORWARD_DASHBOARD_PORT)"
+	cd dashboard && bun run dev --port $(FORWARD_DASHBOARD_PORT)
 
 down:
 	docker compose down
