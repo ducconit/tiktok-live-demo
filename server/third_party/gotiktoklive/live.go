@@ -159,7 +159,7 @@ func (l *Live) startLongPoll() {
 	go func() {
 		defer l.wg.Done()
 		defer close(l.Events)
-		ticker := time.NewTicker(2 * time.Second)
+		ticker := time.NewTicker(5 * time.Second)
 		defer ticker.Stop()
 		fails := 0
 		for {
