@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 	"unsafe"
 )
 
@@ -114,20 +115,42 @@ func (s *Signer) Sign(rawURL string) (string, error) {
 }
 
 func extractJS() (string, error) {
-	// Use a fixed dir so a killed process (no Close) leaves at most one dir,
-	// which is overwritten on the next start instead of accumulating.
-	dir := filepath.Join(os.TempDir(), "tiktok-signer-js")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	// Clean up leaked dirs from previously killed processes (no Close), so a
+	// killed server doesn't accumulate /tmp dirs.
+	cleanupOldJSdirs()
+
+	// Unique dir per instance: multiple signers (server + tests) never share,
+	// and Close() only removes this instance's own dir.
+	dir, err := os.MkdirTemp("", "tiktok-signer-js-")
+	if err != nil {
 		return "", err
 	}
 	for _, name := range jsFileNames {
 		b, err := jsFiles.ReadFile("js/" + name)
 		if err != nil {
+			os.RemoveAll(dir)
 			return "", err
 		}
 		if err := os.WriteFile(filepath.Join(dir, name), b, 0o644); err != nil {
+			os.RemoveAll(dir)
 			return "", err
 		}
 	}
 	return dir, nil
+}
+
+// cleanupOldJSdirs removes tiktok-signer-js-* dirs older than 1 hour that were
+// leaked by processes killed before Close() ran.
+func cleanupOldJSdirs() {
+	pattern := filepath.Join(os.TempDir(), "tiktok-signer-js-*")
+	matches, _ := filepath.Glob(pattern)
+	for _, m := range matches {
+		info, err := os.Stat(m)
+		if err != nil {
+			continue
+		}
+		if time.Since(info.ModTime()) > time.Hour {
+			os.RemoveAll(m)
+		}
+	}
 }
