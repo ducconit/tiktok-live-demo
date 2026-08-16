@@ -1,2 +1,2 @@
-// Branding — script new-project.sh thay {{APP_TITLE}} khi copy template
+// Branding — tiêu đề app (dùng cho document.title)
 export const APP_TITLE = "TikTok Live Platform"
