@@ -10,21 +10,23 @@ share, battle… cùng thông tin phòng và host.
 > [`docs/research/tiktok-live-events.md`](docs/research/tiktok-live-events.md) và
 > [`docs/research/tiktok-interactive-games.md`](docs/research/tiktok-interactive-games.md).
 
-> **Release 1.0** — xem chi tiết change log, stack công nghệ, các hoạt động, luồng tại
-> [`docs/RELEASE-1.0.md`](docs/RELEASE-1.0.md).
+> **Release 1.1.0** — frontend chuyển sang **Vue 3 + Tailwind v4 + shadcn-vue + TanStack Query + axios**,
+> thêm room preview + unit/e2e tests. Xem [`docs/RELEASE-1.1.md`](docs/RELEASE-1.1.md).
+> Release 1.0: [`docs/RELEASE-1.0.md`](docs/RELEASE-1.0.md).
 
 ## Kiến trúc
 
 ```
 ┌────────────┐   WebSocket    ┌──────────────────────────────┐   WebSocket/protobuf   ┌────────────────┐
 │  Frontend  │ ─────────────► │  Server (Go)                 │ ─────────────────────► │ webcast.tiktok │
-│  (Vite+React)               │  gotiktoklive relay          │   (reverse-engineered) │   .com         │
+│  (Vue 3 + Vite)             │  gotiktoklive relay          │   (reverse-engineered) │   .com         │
 └────────────┘                └──────────────────────────────┘                        └────────────────┘
 ```
 
 - **`server/`** — Go + `net/http` + `gorilla/websocket`. Nhận `{"action":"connect"}` qua WebSocket,
   chạy `gotiktoklive.TrackUser()`, relay các event đã decode tới client.
-- **`frontend/`** — Vite + React + TypeScript, Tailwind (CDN). Ô nhập username + live event feed.
+- **`frontend/`** — Vue 3 + Vite + TypeScript, **Tailwind CSS v4** + **shadcn-vue** + **TanStack Query** +
+  **axios**. Ô nhập username + live event feed + room preview.
 
 > **Fork vendored:** `gotiktoklive` được copy vào `server/third_party/gotiktoklive` (kèm `replace`
 > trong `go.mod`) để sửa bug `toUser()` — bản gốc check nhầm field avatar (`AvatarLarge`/`AvatarJpg`)
@@ -39,8 +41,8 @@ go run .                    # http://localhost:3001
 
 # 2. Frontend (tab khác)
 cd frontend
-npm install
-npm run dev                 # http://localhost:5173
+bun install
+bun run dev                 # http://localhost:5173
 ```
 
 Mở http://localhost:5173, nhập `@username` của một streamer **đang LIVE** (vd `ducnt.tiktok`), bấm
@@ -61,7 +63,7 @@ CGO_ENABLED=1 go run .
 ## Production build
 
 ```bash
-cd frontend && npm run build      # tạo frontend/dist
+cd frontend && bun run build      # tạo frontend/dist
 cd ../server && CGO_ENABLED=1 go build -o bin/tiktok-bar . && ./bin/tiktok-bar   # tự serve frontend/dist tại :3001
 ```
 

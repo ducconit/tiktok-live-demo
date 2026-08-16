@@ -53,6 +53,18 @@ func main() {
 		json.NewEncoder(w).Encode(map[string]interface{}{"ok": true})
 	})
 
+	mux.HandleFunc("/api/room/{username}", func(w http.ResponseWriter, r *http.Request) {
+		username := normalizeUsername(r.PathValue("username"))
+		w.Header().Set("Content-Type", "application/json")
+		data, err := roomPreview(username)
+		if err != nil {
+			w.WriteHeader(http.StatusBadGateway)
+			json.NewEncoder(w).Encode(map[string]interface{}{"live": false, "error": err.Error()})
+			return
+		}
+		json.NewEncoder(w).Encode(data)
+	})
+
 	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {

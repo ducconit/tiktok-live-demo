@@ -1,12 +1,14 @@
-import type { LiveEvent, User } from "../types";
+<script setup lang="ts">
+import { computed } from "vue";
+import { Badge } from "@/components/ui/badge";
+import { Avatar } from "@/components/ui/avatar";
+import type { LiveEvent, User } from "@/types";
 
-interface Props {
-  event: LiveEvent;
-}
+const props = defineProps<{ event: LiveEvent }>();
 
 const BADGE: Record<string, { label: string; color: string; icon: string }> = {
   chat: { label: "Bình luận", color: "bg-zinc-700 text-zinc-200", icon: "💬" },
-  gift: { label: "Quà", color: "bg-ttred/15 text-ttred", icon: "🎁" },
+  gift: { label: "Quà", color: "bg-destructive/15 text-destructive", icon: "🎁" },
   member: { label: "Tham gia", color: "bg-ttcyan/15 text-ttcyan", icon: "👋" },
   like: { label: "Like", color: "bg-pink-500/15 text-pink-400", icon: "❤️" },
   follow: { label: "Follow", color: "bg-violet-500/15 text-violet-400", icon: "➕" },
@@ -86,55 +88,51 @@ function renderContent(event: LiveEvent): string {
   }
 }
 
-export function EventRow({ event }: Props) {
-  const meta = BADGE[event.type] ?? { label: event.type, color: "bg-zinc-700 text-zinc-200", icon: "•" };
-  const user = getUser(event.data);
-  const nickname = user?.nickname ?? user?.uniqueId ?? "Ẩn danh";
-  const uniqueId = user?.uniqueId;
-  const avatar = user?.profilePictureUrl;
+const meta = computed(
+  () => BADGE[props.event.type] ?? { label: props.event.type, color: "bg-zinc-700 text-zinc-200", icon: "•" },
+);
+const user = computed(() => getUser(props.event.data));
+const nickname = computed(() => user.value?.nickname ?? user.value?.uniqueId ?? "Ẩn danh");
+const uniqueId = computed(() => user.value?.uniqueId);
+</script>
 
-  return (
-    <li className="flex items-start gap-3 rounded-lg border border-edge/60 bg-ink/40 px-3 py-2.5">
-      {user ? (
-        <>
-          {avatar ? (
-            <img
-              src={avatar}
-              alt={nickname}
-              className="mt-0.5 h-9 w-9 shrink-0 rounded-full object-cover"
-            />
-          ) : (
-            <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-sm text-zinc-500">
-              {meta.icon}
-            </div>
-          )}
+<template>
+  <li class="flex items-start gap-3 rounded-lg border border-border/60 bg-ink/40 px-3 py-2.5">
+    <template v-if="user">
+      <Avatar
+        v-if="user.profilePictureUrl"
+        :src="user.profilePictureUrl"
+        :alt="nickname"
+        class="mt-0.5 h-9 w-9"
+      />
+      <div
+        v-else
+        class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-sm text-zinc-500"
+      >
+        {{ meta.icon }}
+      </div>
 
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-              <span className="truncate font-medium text-zinc-100">{nickname}</span>
-              {uniqueId && <span className="truncate text-xs text-zinc-500">@{uniqueId}</span>}
-              <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${meta.color}`}>
-                {meta.label}
-              </span>
-            </div>
-            <p className="mt-0.5 break-words text-sm text-zinc-300">{renderContent(event)}</p>
-          </div>
-        </>
-      ) : (
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-sm">{meta.icon}</span>
-            <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${meta.color}`}>
-              {meta.label}
-            </span>
-          </div>
-          <p className="mt-0.5 break-words text-sm text-zinc-300">{renderContent(event)}</p>
+      <div class="min-w-0 flex-1">
+        <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <span class="truncate font-medium text-zinc-100">{{ nickname }}</span>
+          <span v-if="uniqueId" class="truncate text-xs text-zinc-500">@{{ uniqueId }}</span>
+          <Badge :class="meta.color">{{ meta.label }}</Badge>
         </div>
-      )}
+        <p class="mt-0.5 break-words text-sm text-zinc-300">{{ renderContent(event) }}</p>
+      </div>
+    </template>
+    <template v-else>
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center gap-2">
+          <span class="text-sm">{{ meta.icon }}</span>
+          <Badge :class="meta.color">{{ meta.label }}</Badge>
+        </div>
+        <p class="mt-0.5 break-words text-sm text-zinc-300">{{ renderContent(event) }}</p>
+      </div>
+    </template>
 
-      <span className="shrink-0 pt-0.5 text-[10px] tabular-nums text-zinc-600">
-        {time(event.ts)}
-      </span>
-    </li>
-  );
-}
+    <span class="shrink-0 pt-0.5 text-[10px] tabular-nums text-zinc-600">
+      {{ time(event.ts) }}
+    </span>
+  </li>
+</template>

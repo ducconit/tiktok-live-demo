@@ -1,4 +1,4 @@
-import type { LiveEvent } from "./types";
+import type { LiveEvent } from "../types";
 
 export class LiveSocket {
   private ws: WebSocket | null = null;

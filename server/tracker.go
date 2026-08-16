@@ -91,6 +91,36 @@ func statusEvent(state string) event {
 	return event{Type: "status", Data: map[string]interface{}{"state": state}, Ts: time.Now().UnixMilli()}
 }
 
+// roomPreview returns a lightweight preview (live status + room info) for a
+// username, used by the frontend's TanStack Query before connecting.
+func roomPreview(username string) (map[string]interface{}, error) {
+	t, err := gotiktoklive.NewTikTok()
+	if err != nil {
+		return nil, err
+	}
+	info, err := t.GetRoomInfo(username)
+	if err != nil {
+		// Offline / not found → not live.
+		return map[string]interface{}{"live": false}, nil
+	}
+	out := map[string]interface{}{
+		"live":      true,
+		"title":     info.Title,
+		"userCount": info.UserCount,
+	}
+	if info.Owner != nil {
+		owner := map[string]interface{}{
+			"uniqueId": info.Owner.Username,
+			"nickname": info.Owner.Nickname,
+		}
+		if avatars := info.Owner.AvatarThumb.URLList; len(avatars) > 0 {
+			owner["profilePictureUrl"] = avatars[0]
+		}
+		out["owner"] = owner
+	}
+	return out, nil
+}
+
 func startTracker(username string, emit emitFunc, cfg config) (controller, error) {
 	return startLive(username, emit, cfg)
 }
