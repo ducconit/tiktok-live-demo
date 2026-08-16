@@ -1,0 +1,105 @@
+# ============================================================
+# tiktok-live-platform — CONFIG YAML (optional, zero-config)
+# Đặt TRONG backend/ (cạnh .env) — nguồn chính khi CONFIG_DSN=file://config.yml
+# (đây là mặc định; ko có file → dùng defaults).
+# Thứ tự ưu tiên: OS env (cao nhất) → CONFIG_DSN (file này) → .env → defaults.
+# Copy sang config.yml CHỈ KHI cần override: cp config.example.yml config.yml
+# Tất cả key đều có default trong code — file này chỉ override những gì cần.
+# ============================================================
+
+app:
+  env: development        # development | staging | production
+  name: tiktok-live-platform
+  title: TikTok Live Platform
+
+server:
+  host: 127.0.0.1         # trong docker compose: 0.0.0.0
+  port: "3330"            # để STRING (khớp kiểu config)
+  rate_limit: 100         # requests/giây per client (đổi runtime qua dynamic config)
+  # rate_limit_store: redis  # "" = theo cache store; "memory" (1 instance) | "redis" (multi-instance, INCR+EXPIRE)
+  auth_rate_limit: 10     # auth group (login/OTP/forgot...) — chống brute force
+
+database:
+  url: "postgres://app:app_password_dev@localhost:5433/tiktok_live_platform?sslmode=disable"
+  # replicas: "postgres://user:pass@host:5432/db,..."  # read replicas (comma-separated)
+
+jwt:
+  # secret: "dev-secret-change-me"   # PRODUCTION bắt buộc: go run ./cmd/app key:generate
+  access_ttl: 15m
+  refresh_ttl: 720h
+
+redis:
+  url: "redis://localhost:6380/0"
+
+cache:
+  store: memory           # memory (Ristretto) | redis
+  prefix: ""
+  default_ttl: 5m
+
+# Storage — multiple disk (kiểu Laravel Filesystem)
+# default_disk: disk dùng khi gọi Disk("") — mặc định "public"
+# disks.<name>:
+#   local: driver local — root (thư mục) + url (prefix công khai, "" = private)
+#   s3:    driver s3-compatible (MinIO/AWS S3) — endpoint/access_key/secret_key/bucket/use_ssl
+storage:
+  default_disk: public
+  disks:
+    public:                       # file công khai — serve qua /storage
+      driver: local
+      root: ./storage/public
+      url: /storage
+    private:                      # file riêng tư — chỉ backend truy cập
+      driver: local
+      root: ./storage/private
+      # url: ""                   # private: không có URL công khai
+    s3:                           # S3-compatible (MinIO) — dùng qua storage.Disk("s3")
+      driver: s3
+      endpoint: localhost:9010
+      access_key: minioadmin
+      secret_key: minioadmin_dev
+      use_ssl: false
+      bucket: uploads
+
+mail:
+  host: localhost         # dev dùng Mailpit
+  port: 1025
+  username: ""
+  password: ""
+  from: no-reply@example.com
+  tls_policy: auto        # auto (local→NoTLS, remote→STARTTLS) | none (Mailpit) | starttls
+
+log:
+  level: info             # debug | info | warn | error — đổi runtime qua admin PUT /config
+  file_enabled: true      # ghi thêm file theo ngày (logs/<app>-YYYY-MM-DD.log)
+  file_dir: logs
+  file_keep_days: 14      # giữ N ngày, tự xoá file cũ
+
+metrics:
+  enabled: true           # Prometheus metrics — PORT RIÊNG (tách khỏi app) — xem docs/monitoring.md
+  host: 127.0.0.1         # bind localhost (an toàn); đổi 0.0.0.0 khi scrape từ xa
+  port: "9090"
+  path: /metrics
+  auth_token: ""          # "" = không auth (localhost); set = yêu cầu Bearer <token>
+
+# otelx — OpenTelemetry tracing
+otel:
+  enabled: false          # bật khi có otel-collector (compose đã bật + endpoint sẵn)
+  endpoint: localhost:4327  # OTLP gRPC — compose: otel-collector:4317
+
+# OpenAPI spec tự động (GET /api/v1/openapi.json) — mặc định BẬT
+# Tắt ở production nếu không muốn lộ spec: openapi.enabled: false
+openapi:
+  enabled: true
+
+# config:
+#   dsn: "file://config.yml"   # nguồn chính — không set = mặc định file://config.yml
+
+# live — TikTok live tracker + Sockudo (Pusher-compatible WS server)
+# Go server là PUBLISHER (HMAC Pusher HTTP API) — client subscribe qua Sockudo.
+live:
+  connection_mode: long_poll   # "long_poll" (mặc định) | "websocket" (fallback long-poll)
+  poll_interval_ms: 3000
+  sockudo_url: http://localhost:6002
+  sockudo_app_id: demo-app
+  sockudo_app_key: demo-key
+  sockudo_app_secret: demo-secret

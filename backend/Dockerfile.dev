@@ -1,0 +1,17 @@
+# Dev image — hot reload bằng air (compose mount ./backend:/app)
+FROM golang:1.26-alpine
+
+RUN apk add --no-cache git build-base && \
+    go install github.com/air-verse/air@latest
+
+WORKDIR /app
+
+# Go module cache layer (đỡ rebuild lại deps) — third_party cần trước (replace gotiktoklive)
+COPY go.mod go.sum ./
+COPY third_party ./third_party
+RUN go mod download
+
+EXPOSE 8080
+
+# entrypoint ARRAY — đúng chuẩn air-verse
+ENTRYPOINT ["air"]

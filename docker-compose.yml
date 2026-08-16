@@ -1,41 +1,259 @@
+name: tiktok-live-platform
+
 services:
-  # Sockudo — WebSocket server (Pusher-compatible), thay thế relay WS của Go server.
-  # HTTP + WebSocket API: http://localhost:6001 · Metrics: http://localhost:9601/metrics
+  # ============================================================
+  # Sockudo — WebSocket server (Pusher-compatible). Go backend là PUBLISHER
+  # (HMAC Pusher HTTP API) → client (frontend/dashboard) subscribe channel.
+  # HTTP + WebSocket API: http://localhost:6002 · Metrics: http://localhost:9602/metrics
+  # ============================================================
   sockudo:
     image: sockudo/sockudo:latest
+    container_name: ${APP_NAME:-tiktok-live-platform}-sockudo
     restart: unless-stopped
     ports:
-      - "6001:6001"
-      - "9601:9601"
+      - "${FORWARD_SOCKUDO_PORT:-6002}:6002"
+      - "${FORWARD_SOCKUDO_METRICS_PORT:-9602}:9602"
     environment:
       HOST: 0.0.0.0
-      PORT: 6001
-      METRICS_PORT: 9601
+      PORT: 6002
+      METRICS_PORT: 9602
       METRICS_ENABLED: "true"
+      # Drivers — minimal local shape (adapter local + memory) — deliver publish → WS
+      # (latest image đổi default driver, cần ép local/memory cho dev single-node)
+      ADAPTER_DRIVER: local
+      CACHE_DRIVER: memory
+      QUEUE_DRIVER: memory
+      APP_MANAGER_DRIVER: memory
       # local/dev: cho phép push storage driver in-memory
       PUSH_ALLOW_MEMORY_DRIVERS: "true"
       SOCKUDO_DEFAULT_APP_ID: ${SOCKUDO_APP_ID:-demo-app}
       SOCKUDO_DEFAULT_APP_KEY: ${SOCKUDO_APP_KEY:-demo-key}
       SOCKUDO_DEFAULT_APP_SECRET: ${SOCKUDO_APP_SECRET:-demo-secret}
+      SOCKUDO_DEFAULT_APP_ENABLED: "true"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:6001/up"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:6002/up"]
       interval: 5s
       timeout: 3s
       retries: 10
 
-  # Redis — backend cho Sockudo khi cần multi-instance (optional).
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
+  postgres:
+    image: postgres:18
+    container_name: ${APP_NAME:-tiktok-live-platform}-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app_password_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-tiktok_live_platform}
     ports:
-      - "6379:6379"
+      - "${FORWARD_POSTGRES_PORT:-5433}:5432"
     volumes:
-      - redis-data:/data
+      # Postgres 18+: mount gốc /var/lib/postgresql (data nằm trong 18/docker)
+      - pgdata:/var/lib/postgresql
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-tiktok_live_platform}"]
       interval: 5s
       timeout: 3s
       retries: 10
+
+  valkey:
+    image: valkey/valkey:9
+    container_name: ${APP_NAME:-tiktok-live-platform}-valkey
+    command: ["valkey-server", "--appendonly", "yes"]
+    ports:
+      - "${FORWARD_VALKEY_PORT:-6380}:6379"
+    volumes:
+      - valkeydata:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: ${APP_NAME:-tiktok-live-platform}-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin_dev}
+    ports:
+      - "${FORWARD_MINIO_PORT:-9010}:9000"
+      - "${FORWARD_MINIO_CONSOLE_PORT:-9011}:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: ${APP_NAME:-tiktok-live-platform}-mailpit
+    ports:
+      - "${FORWARD_MAILPIT_PORT:-8026}:8025"
+      - "${FORWARD_MAILPIT_SMTP_PORT:-1026}:1025"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: ${APP_NAME:-tiktok-live-platform}-backend
+    env_file:
+      # .env của BACKEND (đặt trong backend/) — optional (zero-config), mount vào /app
+      - path: ./backend/.env
+        required: false
+    environment:
+      # Trong container phải bind 0.0.0.0 để nhận traffic từ host
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 3330
+      # Metrics cũng bind 0.0.0.0 trong container — Prometheus scrape qua network (backend:9090)
+      METRICS_HOST: 0.0.0.0
+      # SMTP = mailpit container (health check service_up{mail}) — mailpit không STARTTLS
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_TLS_POLICY: none
+      # OpenTelemetry tracing → alloy (log + trace) → Jaeger (xem core/otelx)
+      OTEL_ENABLED: "true"
+      OTEL_ENDPOINT: alloy:4327
+      # MinIO container (storage + service_up{minio})
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin_dev}
+      MINIO_BUCKET: ${APP_NAME:-tiktok-live-platform}
+      DATABASE_URL: postgres://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-app_password_dev}@postgres:5432/${POSTGRES_DB:-tiktok_live_platform}?sslmode=disable
+      REDIS_URL: redis://valkey:6379/0
+      # Live tracker → Sockudo (container: sockudo:6002)
+      SOCKUDO_URL: http://sockudo:6002
+      SOCKUDO_APP_ID: ${SOCKUDO_APP_ID:-demo-app}
+      SOCKUDO_APP_KEY: ${SOCKUDO_APP_KEY:-demo-key}
+      SOCKUDO_APP_SECRET: ${SOCKUDO_APP_SECRET:-demo-secret}
+    ports:
+      - "${FORWARD_API_PORT:-3330}:3330"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      sockudo:
+        condition: service_healthy
+    # air hot-reload; entrypoint array — đúng chuẩn air-verse/air
+
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile.dev
+    container_name: ${APP_NAME:-tiktok-live-platform}-dashboard
+    env_file:
+      # .env của DASHBOARD (đặt trong dashboard/) — optional (zero-config), mount vào /app
+      # VITE_API_BASE_URL=http://backend:3330 (docker dev) — xem dashboard/.env.example
+      - path: ./dashboard/.env
+        required: false
+    ports:
+      - "${FORWARD_DASHBOARD_PORT:-5176}:5173"
+    volumes:
+      - ./dashboard:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+  # ---- Frontend (end-user) — clone dashboard codebase, port 5175 ----
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: ${APP_NAME:-tiktok-live-platform}-frontend
+    env_file:
+      # VITE_API_BASE_URL=http://backend:3330 (docker dev) — xem frontend/.env.example
+      - path: ./frontend/.env
+        required: false
+    ports:
+      - "${FORWARD_FRONTEND_PORT:-5175}:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+      - sockudo
+
+  # ============================================================
+  # MONITORING — Prometheus + Grafana + Loki + OpenTelemetry
+  # Config: deploy/monitoring/ — dashboard: http://localhost:3006 (admin/admin)
+  # ============================================================
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: ${APP_NAME:-tiktok-live-platform}-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    volumes:
+      - ./deploy/monitoring/prometheus:/etc/prometheus:ro
+      - prometheusdata:/prometheus
+    ports:
+      - "${FORWARD_PROMETHEUS_PORT:-9092}:9090"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.6.0
+    container_name: ${APP_NAME:-tiktok-live-platform}-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_AUTH_ANONYMOUS_ENABLED: "true" # dev — xem dashboard không cần login
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./deploy/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafanadata:/var/lib/grafana
+    ports:
+      - "${FORWARD_GRAFANA_PORT:-3006}:3000"
+    depends_on:
+      - prometheus
+      - loki
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.5.0
+    container_name: ${APP_NAME:-tiktok-live-platform}-loki
+    command: -config.file=/etc/loki/config.yml
+    volumes:
+      - ./deploy/monitoring/loki:/etc/loki:ro
+      - lokidata:/loki
+    ports:
+      - "${FORWARD_LOKI_PORT:-3102}:3100"
+    restart: unless-stopped
+
+  alloy:
+    image: grafana/alloy:v1.9.1
+    container_name: ${APP_NAME:-tiktok-live-platform}-alloy
+    command: run --server.http.listen-addr=0.0.0.0:12345 /etc/alloy/config.alloy
+    volumes:
+      - ./deploy/monitoring/alloy:/etc/alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "${FORWARD_OTEL_GRPC_PORT:-4327}:4327" # OTLP gRPC (trace → jaeger)
+      - "${FORWARD_OTEL_HTTP_PORT:-4328}:4328" # OTLP HTTP
+    depends_on:
+      - loki
+      - jaeger
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.70.0
+    container_name: ${APP_NAME:-tiktok-live-platform}-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "${FORWARD_JAEGER_UI_PORT:-16687}:16686" # UI
+    restart: unless-stopped
 
 volumes:
-  redis-data:
+  pgdata:
+  valkeydata:
+  miniodata:
+  prometheusdata:
+  grafanadata:
+  lokidata:
+  jaegerdata:

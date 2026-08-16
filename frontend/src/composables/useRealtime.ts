@@ -4,6 +4,8 @@ import type { Channel } from "@sockudo/client";
 import { connectRoom, disconnectRoom } from "@/services/realtime";
 import type { LiveEvent, StatusData } from "@/types";
 
+// useRealtime — kết nối live monitor: REST control (connect/disconnect) +
+// subscribe Sockudo channel "user_<username>" để nhận events realtime.
 export function useRealtime() {
   const sock = useSockudo();
   const status = ref<StatusData>({ state: "idle" });

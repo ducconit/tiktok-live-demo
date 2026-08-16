@@ -1,0 +1,20 @@
+with-expecter: true
+dir: "internal/mocks"
+mockname: "Mock{{.InterfaceName}}"
+outpkg: "mocks"
+filename: "mock_{{.InterfaceName}}.go"
+packages:
+  github.com/ducconit/tiktok-live-platform/backend/core/auth:
+    interfaces:
+      UserRepo:
+      RBACReader:
+      TokenStore:
+  github.com/ducconit/tiktok-live-platform/backend/internal/user:
+    interfaces:
+      Repository:
+  github.com/ducconit/tiktok-live-platform/backend/internal/apikey:
+    interfaces:
+      APIKeyRepository:
+  github.com/ducconit/tiktok-live-platform/backend/internal/rbac:
+    interfaces:
+      RoleRepository:

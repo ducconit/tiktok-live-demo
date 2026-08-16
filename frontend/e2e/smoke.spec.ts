@@ -1,9 +1,7 @@
 import { test, expect, type Page, type WebSocketRoute } from "@playwright/test";
 
-// Mock mode (CI): intercept REST (/api/connect, /api/disconnect, /api/room) +
-// Sockudo WebSocket (ws://localhost:6001) — no TikTok needed.
-// Production e2e: E2E_MOCK=0 + E2E_LIVE_USER / E2E_OFFLINE_USER (cần Sockudo + TikTok thật).
-const MOCK = process.env.E2E_MOCK !== "0";
+// Mock mode: intercept REST (/api/v1/public/live/*) + Sockudo WebSocket
+// (ws://localhost:6002) — không cần TikTok thật, không cần backend/docker.
 const LIVE_USER = process.env.E2E_LIVE_USER ?? "mock.live";
 const OFFLINE_USER = process.env.E2E_OFFLINE_USER ?? "mock.offline";
 
@@ -58,60 +56,75 @@ async function mockSockudoWs(page: Page) {
 }
 
 async function mockRest(page: Page) {
-  // Room preview (GET)
-  await page.route("**/api/room/*", (route) => {
+  // Room preview — GET /api/v1/public/live/{user}
+  await page.route("**/api/v1/public/live/*", (route) => {
     const user = decodeURIComponent(route.request().url().split("/").pop() ?? "");
     const live = user === LIVE_USER;
     route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify(
-        live
+      body: JSON.stringify({
+        code: "0",
+        msg: "",
+        data: live
           ? { live: true, title: `Mock LIVE — ${user}`, userCount: 1234, owner: { uniqueId: user, nickname: user } }
           : { live: false },
-      ),
+        meta: {},
+      }),
     });
   });
 
-  // Connect / disconnect control
-  await page.route("**/api/connect", async (route) => {
-    const req = route.request();
-    const body = req.postDataJSON() as { username?: string };
-    const user = body?.username ?? "";
+  // Connect — POST /api/v1/public/live/{user}/connect
+  await page.route("**/connect", async (route) => {
+    const url = route.request().url();
+    const user = decodeURIComponent(url.split("/").filter(Boolean).at(-2) ?? "");
     if (user === LIVE_USER) {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          connected: true,
-          roomId: "1234567890123456789",
-          roomInfo: { title: "Mock LIVE", owner: { uniqueId: user, nickname: user }, userCount: 1234 },
+          code: "0",
+          msg: "",
+          data: {
+            connected: true,
+            roomId: "1234567890123456789",
+            roomInfo: { title: "Mock LIVE", owner: { uniqueId: user, nickname: user }, userCount: 1234 },
+          },
+          meta: {},
         }),
       });
     } else {
       await route.fulfill({
-        status: 200,
+        status: 404,
         contentType: "application/json",
-        body: JSON.stringify({ connected: false, error: "User này hiện không đang LIVE." }),
+        body: JSON.stringify({
+          code: "404",
+          msg: "User này hiện không đang LIVE.",
+          data: null,
+          meta: {},
+        }),
       });
     }
   });
 
-  await page.route("**/api/disconnect", (route) =>
-    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) }),
+  // Disconnect — POST /api/v1/public/live/{user}/disconnect
+  await page.route("**/disconnect", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ code: "0", msg: "", data: { ok: true }, meta: {} }),
+    }),
   );
 }
 
 test.beforeEach(async ({ page }) => {
-  if (MOCK) {
-    await mockRest(page);
-    await mockSockudoWs(page);
-  }
+  await mockRest(page);
+  await mockSockudoWs(page);
   await page.goto("/");
 });
 
 test("app loads with title + connect bar", async ({ page }) => {
-  await expect(page.getByText("TikTok Bar")).toBeVisible();
+  await expect(page.getByText("TikTok Live Platform")).toBeVisible();
   await expect(page.getByPlaceholder("tiktok username")).toBeVisible();
   await expect(page.getByRole("button", { name: "Kết nối" })).toBeVisible();
 });
@@ -123,8 +136,8 @@ test("connect to LIVE user shows events; Dừng stops and does NOT auto-reconnec
   const stopBtn = page.getByRole("button", { name: "Dừng" });
   await expect(stopBtn).toBeVisible({ timeout: 10_000 });
 
-  // Mock events arrive qua Sockudo channel.
-  await expect(page.getByText(/hello mock|Rose/)).toBeVisible({ timeout: 10_000 });
+  // Mock events arrive qua Sockudo channel (chat event đầu tiên).
+  await expect(page.getByText("hello mock 👋")).toBeVisible({ timeout: 10_000 });
 
   // Dừng → idle, không auto-reconnect.
   await stopBtn.click();
@@ -142,7 +155,7 @@ test("connect to OFFLINE user shows error (không LIVE)", async ({ page }) => {
   await expect(page.getByText(/không đang LIVE|không LIVE/)).toBeVisible({ timeout: 10_000 });
 });
 
-test("room preview shows live status via /api/room", async ({ page }) => {
+test("room preview shows live status via /api/v1/public/live", async ({ page }) => {
   const input = page.getByPlaceholder("tiktok username");
 
   await input.fill(LIVE_USER);

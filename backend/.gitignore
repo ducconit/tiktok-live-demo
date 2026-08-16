@@ -1,0 +1,4 @@
+# Thư mục upload local disk (storage/public, storage/private) — KHÔNG đụng core/storage/
+/storage/
+# .i18n — output tạm của make i18n-merge
+/.i18n/

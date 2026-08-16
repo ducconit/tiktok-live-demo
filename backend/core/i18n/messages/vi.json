@@ -1,0 +1,185 @@
+{
+  "error.invalid_api_key": {
+    "other": "API key không hợp lệ"
+  },
+  "error.api_key_revoked": {
+    "other": "API key đã bị vô hiệu hoá"
+  },
+  "error.api_key_expired": {
+    "other": "API key đã hết hạn"
+  },
+  "error.api_key_scope": {
+    "other": "API key không có scope {{.Scope}}"
+  },
+  "error.api_key_not_found": {
+    "other": "Không tìm thấy API key"
+  },
+  "error.missing_api_key": {
+    "other": "Thiếu API key (Authorization: Bearer hoặc X-API-Key)"
+  },
+  "error.bad_credentials": {
+    "other": "Email hoặc mật khẩu sai"
+  },
+  "error.email_not_found": {
+    "other": "Email không tồn tại"
+  },
+  "error.email_taken": {
+    "other": "Email đã được sử dụng"
+  },
+  "error.email_not_verified": {
+    "other": "Tài khoản chưa xác thực email"
+  },
+  "error.wrong_password": {
+    "other": "Mật khẩu hiện tại không đúng"
+  },
+  "error.otp_invalid": {
+    "other": "Mã xác thực không hợp lệ hoặc đã hết hạn"
+  },
+  "error.otp_wrong": {
+    "other": "Mã xác thực không đúng"
+  },
+  "error.otp_cooldown": {
+    "other": "Vui lòng chờ 60 giây trước khi gửi lại mã"
+  },
+  "error.otp_too_many_tries": {
+    "other": "Quá nhiều lần nhập sai, vui lòng gửi lại mã mới"
+  },
+  "error.invalid_body": {
+    "other": "Dữ liệu không hợp lệ"
+  },
+  "error.internal_error": {
+    "other": "Ops! Đang có lỗi xảy ra, vui lòng thử lại sau."
+  },
+  "error.invalid_token": {
+    "other": "Token không hợp lệ hoặc đã hết hạn"
+  },
+  "error.invalid_refresh_token": {
+    "other": "Refresh token không hợp lệ"
+  },
+  "error.refresh_token_expired": {
+    "other": "Refresh token đã hết hạn"
+  },
+  "error.account_disabled": {
+    "other": "Tài khoản đã bị khoá"
+  },
+  "error.email_required": {
+    "other": "Email là bắt buộc"
+  },
+  "error.email_otp_required": {
+    "other": "Email và mã 6 chữ số là bắt buộc"
+  },
+  "error.reset_password_required": {
+    "other": "Email, mã 6 chữ số và mật khẩu mới (tối thiểu 8 ký tự) là bắt buộc"
+  },
+  "error.register_required": {
+    "other": "Email, mật khẩu (tối thiểu 8 ký tự) và họ tên là bắt buộc"
+  },
+  "error.change_password_required": {
+    "other": "current_password và new_password (tối thiểu 8 ký tự) là bắt buộc"
+  },
+  "error.full_name_required": {
+    "other": "full_name là bắt buộc"
+  },
+  "error.key_value_required": {
+    "other": "key và value là bắt buộc"
+  },
+  "error.invalid_type": {
+    "other": "type phải là verify-account hoặc password-reset"
+  },
+  "error.invalid_id": {
+    "other": "ID không hợp lệ"
+  },
+  "error.user_not_found": {
+    "other": "Không tìm thấy người dùng"
+  },
+  "error.role_not_found": {
+    "other": "Không tìm thấy vai trò"
+  },
+  "error.invalid_role_id": {
+    "other": "ID vai trò không hợp lệ (2-64 ký tự: chữ thường, số, _ -)"
+  },
+  "error.role_slug_not_found": {
+    "other": "Role {{.Slug}} chưa tồn tại (chạy migrate + seed)"
+  },
+  "error.role_exists": {
+    "other": "Role đã tồn tại"
+  },
+  "error.system_role_protected": {
+    "other": "Không thể xoá role hệ thống"
+  },
+  "error.system_role_immutable": {
+    "other": "Không thể đổi slug role hệ thống (chỉ đổi tên)"
+  },
+  "error.system_role_permissions": {
+    "other": "Không thể sửa quyền role hệ thống"
+  },
+  "error.cannot_delete_self": {
+    "other": "Không thể xoá chính tài khoản đang đăng nhập"
+  },
+  "error.mail_unavailable": {
+    "other": "Dịch vụ gửi email chưa sẵn sàng"
+  },
+  "error.storage_unavailable": {
+    "other": "Dịch vụ lưu file chưa sẵn sàng"
+  },
+  "error.missing_avatar": {
+    "other": "Thiếu file avatar (field: avatar)"
+  },
+  "error.file_too_large": {
+    "other": "File quá lớn (tối đa 5MB)"
+  },
+  "error.too_many_requests": {
+    "other": "Quá nhiều yêu cầu, xin thử lại sau"
+  },
+  "error.maintenance": {
+    "other": "Hệ thống đang bảo trì, vui lòng quay lại sau"
+  },
+  "error.protected_key": {
+    "other": "Key {{.Key}}* không được đổi runtime (static config)"
+  },
+  "error.protected_server_keys": {
+    "other": "server.host/server.port không được đổi runtime"
+  },
+  "validation.required": {
+    "other": "bắt buộc"
+  },
+  "validation.email": {
+    "other": "email không hợp lệ"
+  },
+  "validation.url": {
+    "other": "URL không hợp lệ"
+  },
+  "validation.uuid": {
+    "other": "UUID không hợp lệ"
+  },
+  "validation.min": {
+    "other": "tối thiểu {{.Param}} ký tự"
+  },
+  "validation.max": {
+    "other": "tối đa {{.Param}} ký tự"
+  },
+  "validation.oneof": {
+    "other": "phải là một trong: {{.Param}}"
+  },
+  "validation.default": {
+    "other": "không hợp lệ"
+  },
+  "error.live_username_required": {
+    "other": "Thiếu username TikTok"
+  },
+  "error.live_preview": {
+    "other": "Không thể kiểm tra phòng này"
+  },
+  "error.live_rate_limit": {
+    "other": "Đã đạt giới hạn request. Đợi vài phút rồi thử lại."
+  },
+  "error.live_offline": {
+    "other": "User này hiện không đang LIVE."
+  },
+  "error.live_timeout": {
+    "other": "Kết nối quá hạn (timeout). Thử lại sau."
+  },
+  "error.live_connect_failed": {
+    "other": "Không thể kết nối phòng LIVE. Thử lại sau."
+  }
+}

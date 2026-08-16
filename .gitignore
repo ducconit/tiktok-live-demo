@@ -1,24 +1,46 @@
-# Go
-server/bin/
-server/tmp/
-server/logs/
+# ---- Env / secrets ----
+.env
+.env.*
+!.env.example
+config.yml
+!config.example.yml
+
+# ---- Go ----
+backend/bin/
+backend/tmp/
 *.exe
 *.test
 *.out
 
-# Node / Vite
-frontend/node_modules/
-frontend/dist/
-frontend/tsconfig.tsbuildinfo
+# ---- Node / Bun ----
+node_modules/
+dist/
+dist-ssr/
+*.local
 
-# Env / secrets
-.env
-.env.*
-!.env.example
+# ---- Logs (file daily từ core/logger) ----
+logs/
 
-# OS
+# ---- Air ----
+backend/tmp/air
+
+# ---- Staging/Prod compose (không commit, chứa secret thật) ----
+compose.yml
+compose.*.yml
+
+# ---- IDE / OS ----
+.idea/
+.vscode/
 .DS_Store
+*.swp
 
-# AI agent workspace tooling (not part of the app)
-.opencode/
-.commandcode/
+# ---- Logs ----
+*.log
+/devtool
+
+# ---- old-version (bản cũ tiktok-bar — giữ tham khảo, bỏ phần nặng) ----
+old-version/frontend/node_modules/
+old-version/frontend/dist/
+old-version/server/bin/
+old-version/server/tmp/
+old-version/server/logs/

@@ -1,8 +1,9 @@
 import axios from "axios";
+import type { Envelope } from "@/services/api";
 import type { RoomInfo } from "@/types";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_SERVER_URL ?? "",
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? "",
   timeout: 20_000,
 });
 
@@ -15,21 +16,31 @@ export interface ConnectResult {
   error?: string;
 }
 
-// Bắt đầu track (Go server connect TikTok) — events sẽ được publish lên Sockudo.
+interface ConnectData {
+  connected: true;
+  roomId: string;
+  roomInfo: RoomInfo | null;
+}
+
+// Bắt đầu track (backend connect TikTok) — events publish lên Sockudo
+// channel "user_<username>". POST /api/v1/public/live/{username}/connect.
 export async function connectRoom(username: string): Promise<ConnectResult> {
   try {
-    const { data } = await api.post<ConnectResult>("/api/connect", { username });
-    return data;
+    const { data } = await api.post<Envelope<ConnectData>>(
+      `/api/v1/public/live/${encodeURIComponent(username)}/connect`,
+    );
+    return data.data;
   } catch (e) {
-    const msg = (e as { response?: { data?: { error?: string } } }).response?.data?.error;
+    // Envelope lỗi: msg đã được backend dịch (i18n theo Accept-Language).
+    const msg = (e as { response?: { data?: { msg?: string } } }).response?.data?.msg;
     return { connected: false, error: msg ?? "Lỗi kết nối" };
   }
 }
 
-// Dừng track.
+// Dừng track — POST /api/v1/public/live/{username}/disconnect.
 export async function disconnectRoom(username: string): Promise<void> {
   try {
-    await api.post("/api/disconnect", { username });
+    await api.post(`/api/v1/public/live/${encodeURIComponent(username)}/disconnect`);
   } catch {
     // ignore
   }

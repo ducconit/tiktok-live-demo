@@ -1,0 +1,41 @@
+services:
+  # Sockudo — WebSocket server (Pusher-compatible), thay thế relay WS của Go server.
+  # HTTP + WebSocket API: http://localhost:6001 · Metrics: http://localhost:9601/metrics
+  sockudo:
+    image: sockudo/sockudo:latest
+    restart: unless-stopped
+    ports:
+      - "6001:6001"
+      - "9601:9601"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 6001
+      METRICS_PORT: 9601
+      METRICS_ENABLED: "true"
+      # local/dev: cho phép push storage driver in-memory
+      PUSH_ALLOW_MEMORY_DRIVERS: "true"
+      SOCKUDO_DEFAULT_APP_ID: ${SOCKUDO_APP_ID:-demo-app}
+      SOCKUDO_DEFAULT_APP_KEY: ${SOCKUDO_APP_KEY:-demo-key}
+      SOCKUDO_DEFAULT_APP_SECRET: ${SOCKUDO_APP_SECRET:-demo-secret}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:6001/up"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Redis — backend cho Sockudo khi cần multi-instance (optional).
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  redis-data:

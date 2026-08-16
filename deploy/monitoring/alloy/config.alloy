@@ -1,0 +1,58 @@
+// Grafana Alloy — thay promtail + otel-collector (gộp 2 vai trò).
+// Log: container (backend/dashboard) → Loki
+// Trace: OTLP (4327/4328 host) → Jaeger
+
+// ---- LOG: docker container → Loki ----
+discovery.docker "app" {
+  host = "unix:///var/run/docker.sock"
+  // Chỉ lấy container backend (dashboard/vite log ít giá trị)
+  filter {
+    name   = "name"
+    values = ["tiktok-live-platform-backend"]
+  }
+  refresh_interval = "10s"
+}
+
+// loki.source.docker KHÔNG tự giữ __meta_* label → map container name thành label
+discovery.relabel "app" {
+  targets = discovery.docker.app.targets
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+}
+
+loki.source.docker "app" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.relabel.app.output
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
+
+// ---- TRACE: OTLP receiver → Jaeger (thay otel-collector) ----
+otelcol.receiver.otlp "traces" {
+  grpc {
+    endpoint = "0.0.0.0:4327"
+  }
+  http {
+    endpoint = "0.0.0.0:4318"
+  }
+  output {
+    traces = [otelcol.exporter.otlp.jaeger.input]
+  }
+}
+
+otelcol.exporter.otlp "jaeger" {
+  client {
+    endpoint = "jaeger:4317"
+    tls {
+      insecure = true
+    }
+  }
+}

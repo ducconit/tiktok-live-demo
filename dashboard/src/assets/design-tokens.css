@@ -1,0 +1,102 @@
+/* ============================================================
+   Design System "Studio Dark" v2.0 — dark-first, indigo → violet
+   Xem docs/design-system.md cho component inventory + patterns.
+   ============================================================ */
+
+/* ---- Dark (mặc định — skeleton luôn bắt đầu dark) ---- */
+:root,
+.dark {
+  --background: hsl(240 14% 7%);
+  --foreground: hsl(228 25% 92%);
+
+  --card: hsl(240 12% 10%);
+  --card-foreground: hsl(228 25% 92%);
+
+  --popover: hsl(240 12% 10%);
+  --popover-foreground: hsl(228 25% 92%);
+
+  /* Primary: indigo → violet gradient endpoint */
+  --primary: hsl(243 75% 59%);
+  --primary-foreground: hsl(228 25% 98%);
+
+  --secondary: hsl(240 10% 15%);
+  --secondary-foreground: hsl(228 25% 92%);
+
+  --muted: hsl(240 10% 13%);
+  --muted-foreground: hsl(228 10% 62%);
+
+  --accent: hsl(262 83% 58%);
+  --accent-foreground: hsl(228 25% 98%);
+
+  --destructive: hsl(0 72% 51%);
+  --destructive-foreground: hsl(0 0% 98%);
+
+  --border: hsl(240 10% 17%);
+  --input: hsl(240 10% 20%);
+  --ring: hsl(243 75% 59%);
+
+  --radius: 0.625rem;
+
+  /* Chart palette (indigo→violet family) */
+  --chart-1: hsl(243 75% 64%);
+  --chart-2: hsl(262 83% 64%);
+  --chart-3: hsl(280 70% 62%);
+  --chart-4: hsl(226 70% 62%);
+  --chart-5: hsl(300 60% 60%);
+
+  /* Sidebar */
+  --sidebar: hsl(240 14% 5%);
+  --sidebar-foreground: hsl(228 25% 92%);
+  --sidebar-primary: hsl(243 75% 59%);
+  --sidebar-primary-foreground: hsl(228 25% 98%);
+  --sidebar-accent: hsl(240 10% 14%);
+  --sidebar-accent-foreground: hsl(228 25% 92%);
+  --sidebar-border: hsl(240 10% 14%);
+  --sidebar-ring: hsl(243 75% 59%);
+}
+
+/* ---- Light (theme toggle) ---- */
+.light {
+  --background: hsl(228 30% 98%);
+  --foreground: hsl(240 14% 12%);
+
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(240 14% 12%);
+
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(240 14% 12%);
+
+  --primary: hsl(243 75% 52%);
+  --primary-foreground: hsl(228 25% 98%);
+
+  --secondary: hsl(228 20% 93%);
+  --secondary-foreground: hsl(240 14% 12%);
+
+  --muted: hsl(228 15% 94%);
+  --muted-foreground: hsl(228 8% 46%);
+
+  --accent: hsl(262 70% 90%);
+  --accent-foreground: hsl(262 70% 30%);
+
+  --destructive: hsl(0 72% 51%);
+  --destructive-foreground: hsl(0 0% 98%);
+
+  --border: hsl(228 15% 88%);
+  --input: hsl(228 15% 84%);
+  --ring: hsl(243 75% 52%);
+
+  --chart-1: hsl(243 75% 52%);
+  --chart-2: hsl(262 83% 55%);
+  --chart-3: hsl(280 70% 55%);
+  --chart-4: hsl(226 70% 55%);
+  --chart-5: hsl(300 60% 50%);
+
+  --sidebar: hsl(228 25% 96%);
+  --sidebar-foreground: hsl(240 14% 12%);
+  --sidebar-primary: hsl(243 75% 52%);
+  --sidebar-primary-foreground: hsl(228 25% 98%);
+  --sidebar-accent: hsl(228 20% 90%);
+  --sidebar-accent-foreground: hsl(240 14% 12%);
+  --sidebar-border: hsl(228 15% 86%);
+  --sidebar-ring: hsl(243 75% 52%);
+}

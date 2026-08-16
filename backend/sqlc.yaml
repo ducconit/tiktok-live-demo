@@ -1,0 +1,48 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    # Schema đọc từ goose migrations (sqlc tự hiểu annotation -- +goose Up/Down)
+    schema: "migrations"
+    queries: "db/queries"
+    gen:
+      go:
+        package: "db"
+        out: "db"
+        sql_package: "pgx/v5"
+        emit_json_tags: true
+        emit_interface: true
+        # NULLABLE → pointer type thông dụng (*time.Time, *string...) thay vì pgtype.X
+        emit_pointers_for_null_types: false
+        overrides:
+          # MỌI id dùng string (không uuid.UUID) — sau này đổi uuid → ulid ở DB
+          # chỉ cần đổi schema + default, code Go không phải sửa
+          - db_type: "uuid"
+            go_type: "string"
+          - db_type: "uuid"
+            nullable: true
+            go_type:
+              type: "string"
+              pointer: true
+          - db_type: "timestamptz"
+            go_type: "time.Time"
+          - db_type: "timestamptz"
+            nullable: true
+            go_type:
+              type: "time.Time"
+              pointer: true
+          - db_type: "date"
+            go_type: "time.Time"
+          - db_type: "date"
+            nullable: true
+            go_type:
+              type: "time.Time"
+              pointer: true
+          - db_type: "boolean"
+            nullable: true
+            go_type:
+              type: "bool"
+              pointer: true
+          # narg/expression nullable (ListUsers is_active, ...) — pgx/v5 mặc định
+          # sinh pgtype; chấp nhận giữ pgtype.Bool cho param (chỉ 1 chỗ)
+          # Cột NULLABLE (timestamptz/uuid/text...) → pointer thông dụng
+          # (*time.Time, *string) — emit_pointers_for_null_types: false

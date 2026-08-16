@@ -1,20 +1,29 @@
-import { fileURLToPath, URL } from "node:url";
-import { defineConfig } from "vite";
-import vue from "@vitejs/plugin-vue";
-import tailwindcss from "@tailwindcss/vite";
+import { fileURLToPath, URL } from 'node:url'
+import { defineConfig, loadEnv } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import tailwindcss from '@tailwindcss/vite'
 
-export default defineConfig({
-  plugins: [vue(), tailwindcss()],
-  resolve: {
-    alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url)),
+// loadEnv: Vite config chạy ở Node context — KHÔNG tự đọc .env như client code.
+// Đọc frontend/.env (VITE_API_BASE_URL, VITE_SOCKUDO_*) — env đặt trong frontend/.
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  return {
+    plugins: [vue(), tailwindcss()],
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
+      },
     },
-  },
-  server: {
-    port: 5173,
-    proxy: {
-      "/ws": { target: "http://localhost:3001", ws: true },
-      "/api": { target: "http://localhost:3001" },
+    server: {
+      port: 5173,
+      host: true,
+      // Proxy API sang backend (dev, tránh CORS rườm rà)
+      proxy: {
+        '/api': {
+          target: env.VITE_API_BASE_URL || 'http://localhost:3330',
+          changeOrigin: true,
+        },
+      },
     },
-  },
-});
+  }
+})

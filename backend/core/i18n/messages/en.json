@@ -1,0 +1,185 @@
+{
+  "error.invalid_api_key": {
+    "other": "Invalid API key"
+  },
+  "error.api_key_revoked": {
+    "other": "API key has been revoked"
+  },
+  "error.api_key_expired": {
+    "other": "API key has expired"
+  },
+  "error.api_key_scope": {
+    "other": "API key missing scope {{.Scope}}"
+  },
+  "error.api_key_not_found": {
+    "other": "API key not found"
+  },
+  "error.missing_api_key": {
+    "other": "Missing API key (Authorization: Bearer or X-API-Key)"
+  },
+  "error.bad_credentials": {
+    "other": "Invalid email or password"
+  },
+  "error.email_not_found": {
+    "other": "Email not found"
+  },
+  "error.email_taken": {
+    "other": "Email already in use"
+  },
+  "error.email_not_verified": {
+    "other": "Account email not verified"
+  },
+  "error.wrong_password": {
+    "other": "Current password is incorrect"
+  },
+  "error.otp_invalid": {
+    "other": "Invalid or expired verification code"
+  },
+  "error.otp_wrong": {
+    "other": "Verification code is incorrect"
+  },
+  "error.otp_cooldown": {
+    "other": "Please wait 60 seconds before requesting a new code"
+  },
+  "error.otp_too_many_tries": {
+    "other": "Too many failed attempts, please request a new code"
+  },
+  "error.invalid_body": {
+    "other": "Invalid request data"
+  },
+  "error.internal_error": {
+    "other": "Oops! Something went wrong, please try again later."
+  },
+  "error.invalid_token": {
+    "other": "Invalid or expired token"
+  },
+  "error.invalid_refresh_token": {
+    "other": "Invalid refresh token"
+  },
+  "error.refresh_token_expired": {
+    "other": "Refresh token expired"
+  },
+  "error.account_disabled": {
+    "other": "Account has been disabled"
+  },
+  "error.email_required": {
+    "other": "Email is required"
+  },
+  "error.email_otp_required": {
+    "other": "Email and 6-digit code are required"
+  },
+  "error.reset_password_required": {
+    "other": "Email, 6-digit code and new password (min 8 chars) are required"
+  },
+  "error.register_required": {
+    "other": "Email, password (min 8 chars) and full name are required"
+  },
+  "error.change_password_required": {
+    "other": "current_password and new_password (min 8 chars) are required"
+  },
+  "error.full_name_required": {
+    "other": "full_name is required"
+  },
+  "error.key_value_required": {
+    "other": "key and value are required"
+  },
+  "error.invalid_type": {
+    "other": "type must be verify-account or password-reset"
+  },
+  "error.invalid_id": {
+    "other": "Invalid ID"
+  },
+  "error.user_not_found": {
+    "other": "User not found"
+  },
+  "error.role_not_found": {
+    "other": "Role not found"
+  },
+  "error.invalid_role_id": {
+    "other": "Invalid role id (2-64 chars: lowercase, digits, _ -)"
+  },
+  "error.role_slug_not_found": {
+    "other": "Role {{.Slug}} not found (run migrate + seed)"
+  },
+  "error.role_exists": {
+    "other": "Role already exists"
+  },
+  "error.system_role_protected": {
+    "other": "Cannot delete system role"
+  },
+  "error.system_role_immutable": {
+    "other": "Cannot change system role slug (name only)"
+  },
+  "error.system_role_permissions": {
+    "other": "Cannot change system role permissions"
+  },
+  "error.cannot_delete_self": {
+    "other": "Cannot delete your own account"
+  },
+  "error.mail_unavailable": {
+    "other": "Email service is not ready"
+  },
+  "error.storage_unavailable": {
+    "other": "File storage is not ready"
+  },
+  "error.missing_avatar": {
+    "other": "Missing avatar file (field: avatar)"
+  },
+  "error.file_too_large": {
+    "other": "File too large (max 5MB)"
+  },
+  "error.too_many_requests": {
+    "other": "Too many requests, please try again later"
+  },
+  "error.maintenance": {
+    "other": "System under maintenance, please come back later"
+  },
+  "error.protected_key": {
+    "other": "Key {{.Key}}* cannot be changed at runtime (static config)"
+  },
+  "error.protected_server_keys": {
+    "other": "server.host/server.port cannot be changed at runtime"
+  },
+  "validation.required": {
+    "other": "is required"
+  },
+  "validation.email": {
+    "other": "is not a valid email"
+  },
+  "validation.url": {
+    "other": "is not a valid URL"
+  },
+  "validation.uuid": {
+    "other": "is not a valid UUID"
+  },
+  "validation.min": {
+    "other": "must be at least {{.Param}} characters"
+  },
+  "validation.max": {
+    "other": "must be at most {{.Param}} characters"
+  },
+  "validation.oneof": {
+    "other": "must be one of: {{.Param}}"
+  },
+  "validation.default": {
+    "other": "is invalid"
+  },
+  "error.live_username_required": {
+    "other": "TikTok username required"
+  },
+  "error.live_preview": {
+    "other": "Could not preview this room"
+  },
+  "error.live_rate_limit": {
+    "other": "Request limit reached. Try again in a few minutes."
+  },
+  "error.live_offline": {
+    "other": "This user is not currently LIVE."
+  },
+  "error.live_timeout": {
+    "other": "Connection timed out. Try again."
+  },
+  "error.live_connect_failed": {
+    "other": "Could not connect to the LIVE room. Try again."
+  }
+}

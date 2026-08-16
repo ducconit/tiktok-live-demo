@@ -1,0 +1,34 @@
+# golangci-lint — chuẩn skeleton (v2)
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - revive
+    - gocritic
+    - misspell
+    - unused
+  exclusions:
+    paths:
+      # Code generated — không lint (sqlc, mockery)
+      - db
+      - internal/mocks
+  settings:
+    revive:
+      rules:
+        # Comment tiếng Việt — không ép buộc format "Tên symbol ..." của Go convention
+        - name: exported
+          disabled: true
+
+run:
+  timeout: 5m
+  tests: true
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports

@@ -1,0 +1,50 @@
+# Alert rules — app tiktok-live-platform (đầy đủ hơn: docs/metrics.md).
+groups:
+  - name: app
+    rules:
+      # App đang bảo trì (1m để tránh nhiễu khi vừa bật)
+      - alert: AppMaintenanceMode
+        expr: app_maintenance_mode == 1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "App đang trong chế độ bảo trì (mọi API trả 503)"
+
+      # Service phụ thuộc chết (2m — tránh nhiễu khi ping transient)
+      - alert: DependentServiceDown
+        expr: service_up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service phụ thuộc {{ $labels.service }} down"
+
+      # 5xx ≥ 5% trong 5 phút
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m]))
+            / sum(rate(http_requests_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Tỷ lệ lỗi 5xx > 5% (5 phút)"
+
+      # p95 latency > 500ms trong 10 phút
+      - alert: SlowLatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "p95 latency > 500ms (10 phút)"
+
+      # In-flight tăng liên tục = request hang/leak
+      - alert: InFlightGrowing
+        expr: increase(http_requests_in_flight[10m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Số request đang xử lý tăng liên tục (có thể hang)"

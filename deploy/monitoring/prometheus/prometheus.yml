@@ -1,0 +1,19 @@
+# Prometheus — scrape app metrics (port riêng backend:9090) + self + alert rules.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - rules.yml
+
+scrape_configs:
+  - job_name: app
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["backend:9090"]
+        labels:
+          app: tiktok-live-platform
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
