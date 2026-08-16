@@ -1,57 +1,102 @@
 package main
 
 import (
-	"fmt"
 	"sync"
 )
 
-// roomRegistry quản lý các tracker đang chạy (1 tracker / username), publish
-// events qua Sockudo thay vì relay qua WebSocket nội bộ.
+// roomRegistry quản lý các tracker đang chạy — **1 tracker / username**.
+// Nhiều tab/browser cùng connect 1 username sẽ DÙNG CHUNG 1 TikTok connection
+// (events publish lên channel "user_<username>", mọi subscriber đều nhận).
+// Dùng reference counting: tracker dừng khi tab cuối cùng disconnect.
 type roomRegistry struct {
 	mu     sync.Mutex
-	tracks map[string]controller
+	locks  map[string]*sync.Mutex // per-username lock để serialize connect/disconnect cùng user
+	tracks map[string]*trackEntry
 	pub    *sockudoPublisher
 	cfg    config
 }
 
-func newRoomRegistry(cfg config, pub *sockudoPublisher) *roomRegistry {
-	return &roomRegistry{tracks: map[string]controller{}, pub: pub, cfg: cfg}
+type trackEntry struct {
+	controller controller
+	refs       int
+	result     map[string]interface{} // {connected:true, roomId, roomInfo}
 }
 
-// connect bắt đầu track một username; trả về trạng thái connected.
-func (r *roomRegistry) connect(username string) (map[string]interface{}, error) {
-	r.mu.Lock()
-	if _, ok := r.tracks[username]; ok {
-		r.mu.Unlock()
-		return nil, fmt.Errorf("đang theo dõi %s", username)
+func newRoomRegistry(cfg config, pub *sockudoPublisher) *roomRegistry {
+	return &roomRegistry{
+		locks:  map[string]*sync.Mutex{},
+		tracks: map[string]*trackEntry{},
+		pub:    pub,
+		cfg:    cfg,
 	}
-	r.mu.Unlock()
+}
+
+func (r *roomRegistry) lockFor(username string) *sync.Mutex {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	l, ok := r.locks[username]
+	if !ok {
+		l = &sync.Mutex{}
+		r.locks[username] = l
+	}
+	return l
+}
+
+// connect: nếu chưa track → start tracker; nếu đã track (tab khác) → tăng refs
+// và trả về connected status hiện có (không tạo thêm TikTok connection).
+func (r *roomRegistry) connect(username string) (map[string]interface{}, error) {
+	l := r.lockFor(username)
+	l.Lock()
+	defer l.Unlock()
+
+	if e, ok := r.tracks[username]; ok {
+		e.refs++
+		return e.result, nil
+	}
 
 	c, connected, err := startLive(username, r.cfg, r.pub)
 	if err != nil {
 		return nil, err
 	}
-
-	r.mu.Lock()
-	r.tracks[username] = c
-	r.mu.Unlock()
-
 	data, _ := connected.Data.(map[string]interface{})
-	return map[string]interface{}{
+	result := map[string]interface{}{
 		"connected": true,
 		"roomId":    data["roomId"],
 		"roomInfo":  data["roomInfo"],
-	}, nil
+	}
+
+	r.mu.Lock()
+	r.tracks[username] = &trackEntry{controller: c, refs: 1, result: result}
+	r.mu.Unlock()
+	return result, nil
 }
 
-// disconnect dừng track + báo "idle" cho mọi subscriber của channel.
+// disconnect: giảm refs; chỉ dừng tracker + publish "idle" khi refs về 0
+// (tab cuối cùng rời).
 func (r *roomRegistry) disconnect(username string) {
+	l := r.lockFor(username)
+	l.Lock()
+	defer l.Unlock()
+
+	e, ok := r.tracks[username]
+	if !ok {
+		return
+	}
+	e.refs--
+	if e.refs > 0 {
+		return
+	}
+
 	r.mu.Lock()
-	c, ok := r.tracks[username]
 	delete(r.tracks, username)
 	r.mu.Unlock()
-	if ok {
-		c.Stop()
-		_ = r.pub.publish("user_"+username, "event", statusEvent("idle"))
-	}
+	e.controller.Stop()
+	_ = r.pub.publish("user_"+username, "event", statusEvent("idle"))
+}
+
+// connectedUserCount trả số username đang được track (debug/hữu ích).
+func (r *roomRegistry) connectedUserCount() int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return len(r.tracks)
 }
