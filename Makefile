@@ -32,7 +32,7 @@ else
 MKDIR := mkdir -p
 endif
 
-.PHONY: dev down logs ps migrate migrate-up migrate-down migrate-status seed sqlc-gen mock-gen test test-coverage bench admin i18n-merge lint build new-project setup watch watch-backend watch-frontend watch-dashboard
+.PHONY: dev down up infra logs ps migrate migrate-up migrate-down migrate-status seed sqlc-gen mock-gen test test-coverage bench admin i18n-merge lint build new-project setup watch watch-backend watch-frontend watch-dashboard
 
 # ---- Setup (cài deps lần đầu — không cần docker) ----
 setup:
@@ -42,10 +42,18 @@ setup:
 	cd frontend && bun install
 	@echo "▶ dashboard: bun install"
 	cd dashboard && bun install
-	@echo "✅ Setup xong — chạy 'make watch' (dev local) hoặc 'make dev' (docker)"
+	@echo "✅ Setup xong — chạy 'make dev' (hot reload) hoặc 'make up' (docker)"
 
-# ---- Docker compose (dev) ----
-dev:
+# ---- Docker compose (dev stack) ----
+# `make infra` = chỉ chạy hạ tầng (postgres/valkey/sockudo/minio/mailpit) —
+# dùng kèm `make dev` (app hot reload LOCAL, kết nối tới các service này qua port host).
+# `make up` = chạy TẤT CẢ trong docker (app cũng nằm trong container).
+infra:
+	docker compose up -d postgres valkey sockudo minio mailpit
+	@echo "▶ Infra sẵn sàng: postgres :5433 · valkey :6380 · sockudo :6002 · minio :9010/9011 · mailpit :8026"
+	@echo "▶ Chạy 'make dev' để start app local (air + bun dev)"
+
+up:
 	docker compose up -d --build
 	@echo "Backend : http://localhost:$(FORWARD_API_PORT)"
 	@echo "Dashboard: http://localhost:$(FORWARD_DASHBOARD_PORT)"
@@ -54,13 +62,12 @@ dev:
 	@echo "Mailpit : http://localhost:$(FORWARD_MAILPIT_PORT)"
 	@echo "MinIO   : http://localhost:$(FORWARD_MINIO_CONSOLE_PORT)"
 
-# ---- Watch (hot reload — chạy LOCAL, không cần docker) ----
-# `make watch` = chạy đồng thời backend (air) + frontend + dashboard (bun dev),
-# Ctrl-C sẽ kill cả 3.
+# ---- Dev local (hot reload) — `make dev` = chạy song song 3 tiến trình: ----
+# backend (air) + frontend + dashboard (bun dev). Ctrl-C dừng tất cả.
 # Port local: frontend $(FORWARD_FRONTEND_PORT) / dashboard $(FORWARD_DASHBOARD_PORT)
 # — khác port mặc định 5173 của vite để chạy được cả 2 app cùng lúc.
-watch:
-	@echo "▶ Backend  : cd backend && air (hot reload)"
+dev:
+	@echo "▶ Backend  : cd backend && air (hot reload) — cần infra (make infra)"
 	@echo "▶ Frontend : http://localhost:$(FORWARD_FRONTEND_PORT) (bun dev)"
 	@echo "▶ Dashboard: http://localhost:$(FORWARD_DASHBOARD_PORT) (bun dev)"
 	@echo "▶ Ctrl-C để dừng tất cả"
@@ -69,6 +76,9 @@ watch:
 	(cd frontend && bun run dev --port $(FORWARD_FRONTEND_PORT)) & \
 	(cd dashboard && bun run dev --port $(FORWARD_DASHBOARD_PORT)) & \
 	wait
+
+# Alias: make watch = make dev (chạy hot reload song song)
+watch: dev
 
 watch-backend:
 	@echo "▶ Backend — air (hot reload) — CGO_ENABLED=1 (QuickJS signer)"
