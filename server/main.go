@@ -69,6 +69,7 @@ func main() {
 	addr := ":" + strconv.Itoa(cfg.Port)
 	logf("[tiktok-bar] server listening on http://localhost%s", addr)
 	logf("[tiktok-bar] signing: self-hosted (QuickJS) — no third-party sign server")
+	logf("[tiktok-bar] connection mode: %s (poll %dms)", cfg.ConnectionMode, cfg.PollIntervalMs)
 
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatalf("server: %v", err)

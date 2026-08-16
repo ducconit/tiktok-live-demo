@@ -39,6 +39,7 @@ type TikTok struct {
 	shouldReconnect          bool
 	enableExperimentalEvents bool
 	enableExtraDebug         bool
+	pollInterval             time.Duration
 	signFunc                 SignFunc
 }
 
@@ -67,6 +68,7 @@ func NewTikTok(options ...TikTokLiveOption) (*TikTok, error) {
 		debugHandler:    routineErrHandler,
 		errHandler:      routineErrHandler,
 		shouldReconnect: true,
+		pollInterval:    3 * time.Second,
 	}
 	envs := []string{"HTTP_PROXY", "HTTPS_PROXY"}
 	var optionsErr []error

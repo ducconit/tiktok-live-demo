@@ -1,6 +1,9 @@
 package gotiktoklive
 
-import "net/http"
+import (
+	"net/http"
+	"time"
+)
 
 type TikTokLiveOption func(t *TikTok) error
 
@@ -13,6 +16,17 @@ type SignFunc func(reqUrl string) ([]byte, http.Header, error)
 func SigningFunc(f SignFunc) TikTokLiveOption {
 	return func(t *TikTok) error {
 		t.signFunc = f
+		return nil
+	}
+}
+
+// PollInterval sets the im/fetch long-poll interval (default 3s). Ignored when
+// ConnectionMode is "websocket".
+func PollInterval(d time.Duration) TikTokLiveOption {
+	return func(t *TikTok) error {
+		if d > 0 {
+			t.pollInterval = d
+		}
 		return nil
 	}
 }
