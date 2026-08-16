@@ -10,6 +10,9 @@ share, battle… cùng thông tin phòng và host.
 > [`docs/research/tiktok-live-events.md`](docs/research/tiktok-live-events.md) và
 > [`docs/research/tiktok-interactive-games.md`](docs/research/tiktok-interactive-games.md).
 
+> **Release 1.0** — xem chi tiết change log, stack công nghệ, các hoạt động, luồng tại
+> [`docs/RELEASE-1.0.md`](docs/RELEASE-1.0.md).
+
 ## Kiến trúc
 
 ```

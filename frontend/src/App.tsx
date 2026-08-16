@@ -67,7 +67,7 @@ export function App() {
             </span>
             <div>
               <h1 className="text-lg font-bold leading-none">TikTok Bar</h1>
-              <p className="text-xs text-zinc-500">LIVE event monitor · v1.1</p>
+              <p className="text-xs text-zinc-500">LIVE event monitor · v1.0</p>
             </div>
           </div>
           <ConnectBar
