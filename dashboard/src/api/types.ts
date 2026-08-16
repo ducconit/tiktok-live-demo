@@ -1,5 +1,6 @@
 // ---- Types khớp chuẩn backend (envelope 4 key + snake_case) ----
 // Chuẩn: { code, msg, data, meta } — code "0" = thành công, lỗi = HTTP status string.
+import type { Envelope as ApiEnvelope } from "@tiktok-live/api"
 
 export interface Meta {
   limit: number
@@ -7,11 +8,10 @@ export interface Meta {
   total: number
 }
 
-export interface Envelope<T = unknown> {
-  code: string // "0" = OK; lỗi: "400", "401", ..., "500", "503"
-  msg: string
+// Envelope dùng chung từ @tiktok-live/api — giữ meta/data linh hoạt như trước
+export type Envelope<T = unknown> = Omit<ApiEnvelope<T>, 'data' | 'meta'> & {
   data?: T
-  meta?: Meta | Record<string, string> // phân trang | validation field errors
+  meta?: Meta | Record<string, string>
 }
 
 export interface User {

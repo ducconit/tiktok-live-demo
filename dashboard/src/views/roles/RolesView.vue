@@ -6,12 +6,12 @@ import { toast } from 'vue-sonner'
 import { Plus, Pencil, Trash2, Shield } from 'lucide-vue-next'
 import { rbacApi } from '@/api'
 import { errorMessage } from '@/api/client'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Input } from '@/components/ui/input'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Label } from '@/components/ui/label'
+import { Button } from "@tiktok-live/ui/button"
+import { Badge } from "@tiktok-live/ui/badge"
+import { Skeleton } from "@tiktok-live/ui/skeleton"
+import { Input } from "@tiktok-live/ui/input"
+import { Checkbox } from "@tiktok-live/ui/checkbox"
+import { Label } from "@tiktok-live/ui/label"
 import {
   Table,
   TableBody,
@@ -19,7 +19,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from "@tiktok-live/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -27,7 +27,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
+} from "@tiktok-live/ui/dialog"
 import type { Permission, Role } from '@/api/types'
 
 const { t } = useI18n()

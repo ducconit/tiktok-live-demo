@@ -4,9 +4,9 @@ import { useRouter } from 'vue-router'
 import { LogOut, Settings } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { useI18n } from 'vue-i18n'
-import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Button } from "@tiktok-live/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@tiktok-live/ui/avatar"
+import { DropdownMenu, DropdownMenuTrigger } from "@tiktok-live/ui/dropdown-menu"
 import { useAuthStore } from '@/stores/auth'
 import { APP_TITLE } from '@/lib/app'
 

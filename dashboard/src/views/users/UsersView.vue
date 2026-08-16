@@ -7,10 +7,10 @@ import { Plus, Trash2, Search } from 'lucide-vue-next'
 import { usersApi } from '@/api'
 import { errorMessage } from '@/api/client'
 import { formatDateTime } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from "@tiktok-live/ui/button"
+import { Badge } from "@tiktok-live/ui/badge"
+import { Input } from "@tiktok-live/ui/input"
+import { Skeleton } from "@tiktok-live/ui/skeleton"
 import {
   Table,
   TableBody,
@@ -18,7 +18,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from "@tiktok-live/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -26,7 +26,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
+} from "@tiktok-live/ui/dialog"
 import UserFormDialog from './UserFormDialog.vue'
 
 const { t } = useI18n()

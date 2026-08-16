@@ -1,0 +1,21 @@
+{
+  "name": "tiktok-live-platform",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "dashboard",
+    "frontend",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:dashboard": "bun run --cwd dashboard dev",
+    "dev:frontend": "bun run --cwd frontend dev",
+    "dev": "bun run dev:dashboard & bun run dev:frontend & wait",
+    "build:dashboard": "bun run --cwd dashboard build",
+    "build:frontend": "bun run --cwd frontend build",
+    "build": "bun run build:dashboard && bun run build:frontend",
+    "typecheck": "bun run --cwd dashboard typecheck && bun run --cwd frontend typecheck",
+    "test": "bun run --cwd frontend test"
+  }
+}

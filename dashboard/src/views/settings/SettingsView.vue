@@ -7,17 +7,17 @@ import { usersApi } from '@/api'
 import { errorMessage } from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
 import { formatDateTime } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Button } from "@tiktok-live/ui/button"
+import { Input } from "@tiktok-live/ui/input"
+import { Label } from "@tiktok-live/ui/label"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+} from "@tiktok-live/ui/card"
+import { Badge } from "@tiktok-live/ui/badge"
 
 const { t } = useI18n()
 const auth = useAuthStore()

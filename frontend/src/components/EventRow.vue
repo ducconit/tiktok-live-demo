@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@tiktok-live/ui/badge";
+import { Avatar, AvatarImage, AvatarFallback } from "@tiktok-live/ui/avatar";
 import type { LiveEvent, User } from "@/types";
 
 const props = defineProps<{ event: LiveEvent }>();

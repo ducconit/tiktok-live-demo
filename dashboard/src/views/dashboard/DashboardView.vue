@@ -21,8 +21,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+} from "@tiktok-live/ui/card"
+import { Skeleton } from "@tiktok-live/ui/skeleton"
 import { Users, UserCheck, UserPlus } from 'lucide-vue-next'
 
 const { t } = useI18n()

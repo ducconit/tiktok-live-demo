@@ -8,12 +8,12 @@ import { apiKeysApi } from '@/api'
 import type { ApiKey, ApiKeyCreated } from '@/api/types'
 import { errorMessage } from '@/api/client'
 import { formatDateTime } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from "@tiktok-live/ui/button"
+import { Badge } from "@tiktok-live/ui/badge"
+import { Input } from "@tiktok-live/ui/input"
+import { Label } from "@tiktok-live/ui/label"
+import { Switch } from "@tiktok-live/ui/switch"
+import { Skeleton } from "@tiktok-live/ui/skeleton"
 import {
   Table,
   TableBody,
@@ -21,7 +21,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from "@tiktok-live/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -29,7 +29,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
+} from "@tiktok-live/ui/dialog"
 
 const { t } = useI18n()
 const queryClient = useQueryClient()

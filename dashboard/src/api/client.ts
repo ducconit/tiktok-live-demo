@@ -1,5 +1,4 @@
-import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios'
-import type { Envelope } from './types'
+import { createApiClient, errorMessage, type Envelope } from "@tiktok-live/api"
 import { LOCALE_KEY } from '../i18n'
 import i18n from '../i18n'
 
@@ -21,112 +20,34 @@ export function clearTokens() {
   localStorage.removeItem(REFRESH_KEY)
 }
 
-export const api = axios.create({
-  // Dashboard dùng namespace admin: /api/v1/admin/auth/login, /api/v1/admin/users...
+// Auth chung cho cả 2 client (admin + public) — 401 → refresh → retry → logout.
+const auth = {
+  getAccessToken,
+  getRefreshToken,
+  setTokens,
+  clearTokens,
+  refreshEndpoint: '/auth/refresh',
+  isAuthUrl: (url: string) => url.includes('/auth/login') || url.includes('/auth/refresh'),
+  onUnauthorized: () => window.dispatchEvent(new CustomEvent('auth:logout')),
+  locale: () => (localStorage.getItem(LOCALE_KEY) === 'en' ? 'en' : 'vi'),
+}
+
+// Dashboard dùng namespace admin: /api/v1/admin/auth/login, /api/v1/admin/users...
+export const api = createApiClient({
   baseURL: `${import.meta.env.VITE_API_BASE_URL || '/api'}/v1/admin`,
   timeout: 15_000,
+  authProvider: auth,
 })
 
 // Namespace public (tài khoản của chính mình): /me, /me/avatar, /me/change-password
-export const publicApi = axios.create({
+export const publicApi = createApiClient({
   baseURL: `${import.meta.env.VITE_API_BASE_URL || '/api'}/v1/public`,
   timeout: 15_000,
+  authProvider: auth,
 })
 
-// ---- Request: gắn Bearer + Accept-Language (backend trả msg đúng ngôn ngữ) ----
-function attachAuth(instance: typeof api) {
-  instance.interceptors.request.use((cfg) => {
-    const token = getAccessToken()
-    if (token) cfg.headers.Authorization = `Bearer ${token}`
-    cfg.headers['Accept-Language'] = localStorage.getItem(LOCALE_KEY) === 'en' ? 'en' : 'vi'
-    return cfg
-  })
-}
-attachAuth(api)
-attachAuth(publicApi)
-
-// ---- Response: 401 → refresh 1 lần → retry; fail → logout ----
-// Áp cho cả api (admin) và publicApi (tài khoản) — dùng chung refresh state.
-let isRefreshing = false
-let waiters: ((ok: boolean) => void)[] = []
-
-function onRefreshed(ok: boolean) {
-  waiters.forEach((w) => w(ok))
-  waiters = []
-}
-
-async function tryRefresh(): Promise<boolean> {
-  const refresh = getRefreshToken()
-  if (!refresh) return false
-  try {
-    const res = await axios.post<Envelope<{ access_token: string; refresh_token: string }>>(
-      `${api.defaults.baseURL}/auth/refresh`,
-      { refresh_token: refresh },
-    )
-    const t = res.data.data
-    if (!t) return false
-    setTokens(t.access_token, t.refresh_token)
-    return true
-  } catch {
-    clearTokens()
-    return false
-  }
-}
-
-function attachRefresh(instance: typeof api) {
-  instance.interceptors.response.use(
-    (res) => res,
-    async (error: AxiosError<Envelope>) => {
-      const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
-      const isAuthCall = original.url?.includes('/auth/login') || original.url?.includes('/auth/refresh')
-
-      if (error.response?.status === 401 && original && !original._retry && !isAuthCall) {
-        if (isRefreshing) {
-          return new Promise((resolve) => {
-            waiters.push((ok) => {
-              if (ok) {
-                original._retry = true
-                original.headers.Authorization = `Bearer ${getAccessToken()}`
-                resolve(instance(original))
-              } else {
-                resolve(Promise.reject(error))
-              }
-            })
-          })
-        }
-
-        original._retry = true
-        isRefreshing = true
-        const ok = await tryRefresh()
-        onRefreshed(ok)
-        isRefreshing = false
-
-        if (ok) {
-          original.headers.Authorization = `Bearer ${getAccessToken()}`
-          return instance(original)
-        }
-        // refresh fail → đá về login
-        window.dispatchEvent(new CustomEvent('auth:logout'))
-        return Promise.reject(error)
-      }
-      return Promise.reject(error)
-    },
-  )
-}
-attachRefresh(api)
-attachRefresh(publicApi)
-
-// ---- Helper lỗi chuẩn envelope 4 key (code/msg) ----
-export function errorMessage(err: unknown): string {
-  if (axios.isAxiosError(err)) {
-    const env = err.response?.data as Envelope | undefined
-    if (env?.msg) return env.msg
-    // validation 422: meta = { field: message } — lấy message đầu tiên
-    if (env?.code === '422' && env.meta && typeof env.meta === 'object') {
-      const first = Object.values(env.meta as Record<string, string>)[0]
-      if (first) return first
-    }
-    if (err.code === 'ECONNABORTED') return i18n.global.t('errors.timeout')
-  }
-  return i18n.global.t('errors.generic')
-}
+// Helper lỗi chuẩn envelope 4 key (code/msg) — giữ i18n fallback của dashboard
+export { errorMessage }
+export const dashboardErrorMessage = (err: unknown) =>
+  errorMessage(err, i18n.global.t('errors.generic'))
+export type { Envelope }

@@ -17,7 +17,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-} from '@/components/ui/sidebar'
+} from "@tiktok-live/ui/sidebar"
 
 const route = useRoute()
 const theme = useThemeStore()

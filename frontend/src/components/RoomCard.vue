@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { Card } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Card } from "@tiktok-live/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "@tiktok-live/ui/avatar";
 import type { RoomInfo, StatusData } from "@/types";
 
 const props = defineProps<{

@@ -4,16 +4,16 @@ import { toast } from 'vue-sonner'
 import { Database, Trash2 } from 'lucide-vue-next'
 import { cacheApi } from '@/api'
 import { errorMessage } from '@/api/client'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from "@tiktok-live/ui/button"
+import { Badge } from "@tiktok-live/ui/badge"
+import { Skeleton } from "@tiktok-live/ui/skeleton"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from "@tiktok-live/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -21,7 +21,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
+} from "@tiktok-live/ui/dialog"
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 

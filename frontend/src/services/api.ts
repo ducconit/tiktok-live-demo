@@ -1,22 +1,16 @@
-import axios from "axios";
+import { createApiClient, type Envelope } from "@tiktok-live/api"
 
-// Envelope chuẩn backend: { code, msg, data, meta } — code "0" = thành công.
-export interface Envelope<T> {
-  code: string;
-  msg: string;
-  data: T;
-  meta: Record<string, unknown>;
-}
+export type { Envelope }
 
 export interface RoomPreview {
-  live: boolean;
-  roomId?: string;
-  title?: string;
-  userCount?: number;
-  owner?: { uniqueId?: string; nickname?: string; profilePictureUrl?: string };
+  live: boolean
+  roomId?: string
+  title?: string
+  userCount?: number
+  owner?: { uniqueId?: string; nickname?: string; profilePictureUrl?: string }
 }
 
-const api = axios.create({
+const api = createApiClient({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? "",
   timeout: 10_000,
 });

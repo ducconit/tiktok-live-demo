@@ -41,8 +41,9 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-      - name: Install
+      - name: Install (root workspaces)
         run: bun install --frozen-lockfile
+        working-directory: .
       - name: Typecheck
         run: bun run typecheck
       - name: Build
@@ -59,8 +60,9 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-      - name: Install
+      - name: Install (root workspaces)
         run: bun install --frozen-lockfile
+        working-directory: .
       - name: Typecheck
         run: bun run typecheck
       - name: Build

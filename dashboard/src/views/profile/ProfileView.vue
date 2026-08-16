@@ -8,18 +8,18 @@ import { accountApi } from '@/api'
 import { errorMessage } from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
 import { formatDateTime } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
+import { Button } from "@tiktok-live/ui/button"
+import { Input } from "@tiktok-live/ui/input"
+import { Label } from "@tiktok-live/ui/label"
+import { Avatar, AvatarFallback, AvatarImage } from "@tiktok-live/ui/avatar"
+import { Badge } from "@tiktok-live/ui/badge"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from "@tiktok-live/ui/card"
 
 const { t } = useI18n()
 const auth = useAuthStore()

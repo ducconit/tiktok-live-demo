@@ -2,9 +2,9 @@
 import { reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Button } from "@tiktok-live/ui/button"
+import { Input } from "@tiktok-live/ui/input"
+import { Label } from "@tiktok-live/ui/label"
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
+} from "@tiktok-live/ui/dialog"
 
 const { t } = useI18n()
 const props = defineProps<{

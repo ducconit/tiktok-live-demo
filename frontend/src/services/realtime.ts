@@ -1,8 +1,7 @@
-import axios from "axios";
-import type { Envelope } from "@/services/api";
+import { createApiClient, errorMessage, type Envelope } from "@tiktok-live/api";
 import type { RoomInfo } from "@/types";
 
-const api = axios.create({
+const api = createApiClient({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? "",
   timeout: 20_000,
 });
@@ -32,8 +31,7 @@ export async function connectRoom(username: string): Promise<ConnectResult> {
     return data.data;
   } catch (e) {
     // Envelope lỗi: msg đã được backend dịch (i18n theo Accept-Language).
-    const msg = (e as { response?: { data?: { msg?: string } } }).response?.data?.msg;
-    return { connected: false, error: msg ?? "Lỗi kết nối" };
+    return { connected: false, error: errorMessage(e, "Lỗi kết nối") };
   }
 }
 

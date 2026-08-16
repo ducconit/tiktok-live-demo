@@ -1,0 +1,28 @@
+{
+  "name": "@tiktok-live/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/components/ui/*/index.ts"
+  },
+  "types": "./src/index.ts",
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  },
+  "dependencies": {
+    "@internationalized/date": "^3.8.0",
+    "@lucide/vue": "^1.31.0",
+    "@unovis/vue": "^1.6.7",
+    "@vueuse/core": "^14.4.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "embla-carousel-vue": "^8.6.0",
+    "reka-ui": "^2.10.3",
+    "tailwind-merge": "^3.0.0",
+    "vee-validate": "^4.15.1",
+    "vue-input-otp": "^0.4.0",
+    "vue-sonner": "^2.0.9"
+  }
+}

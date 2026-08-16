@@ -6,17 +6,17 @@ import { toast } from 'vue-sonner'
 import { Save, SlidersHorizontal } from 'lucide-vue-next'
 import { configApi } from '@/api'
 import { errorMessage } from '@/api/client'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from "@tiktok-live/ui/button"
+import { Badge } from "@tiktok-live/ui/badge"
+import { Input } from "@tiktok-live/ui/input"
+import { Skeleton } from "@tiktok-live/ui/skeleton"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from "@tiktok-live/ui/card"
 
 const { t } = useI18n()
 const queryClient = useQueryClient()

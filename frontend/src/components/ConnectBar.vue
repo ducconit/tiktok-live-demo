@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@tiktok-live/ui/button";
+import { Input } from "@tiktok-live/ui/input";
 import { useRoomPreview } from "@/composables/useRoomQuery";
 
 const props = defineProps<{ connected: boolean; connecting: boolean }>();

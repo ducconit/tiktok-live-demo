@@ -3,10 +3,10 @@ import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { useI18n } from 'vue-i18n'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Button } from "@tiktok-live/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@tiktok-live/ui/card"
+import { Input } from "@tiktok-live/ui/input"
+import { Label } from "@tiktok-live/ui/label"
 import { errorMessage } from '@/api/client'
 import { APP_TITLE } from '@/lib/app'
 import { useAuthStore } from '@/stores/auth'

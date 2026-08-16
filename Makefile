@@ -34,14 +34,11 @@ endif
 
 .PHONY: dev down up infra logs ps migrate migrate-up migrate-down migrate-status seed sqlc-gen mock-gen test test-coverage bench admin i18n-merge lint build new-project setup watch watch-backend watch-frontend watch-dashboard
 
-# ---- Setup (cài deps lần đầu — không cần docker) ----
+# ---- Setup (cài deps lần đầu — monorepo bun workspaces, 1 lệnh ở root) ----
 setup:
+	bun install
 	@echo "▶ backend: go mod download"
 	cd backend && go mod download
-	@echo "▶ frontend: bun install"
-	cd frontend && bun install
-	@echo "▶ dashboard: bun install"
-	cd dashboard && bun install
 	@echo "✅ Setup xong — chạy 'make dev' (hot reload) hoặc 'make up' (docker)"
 
 # ---- Docker compose (dev stack) ----
