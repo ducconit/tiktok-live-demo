@@ -20,6 +20,29 @@ func SigningFunc(f SignFunc) TikTokLiveOption {
 	}
 }
 
+// SignURLFunc signs a URL (returning the signed URL) without fetching it.
+// Used for the WebSocket handshake, which must be signed but is dialed with a
+// WebSocket client rather than fetched over HTTP.
+type SignURLFunc func(reqUrl string) (string, error)
+
+// SigningURLFunc installs a sign-only function for the WebSocket URL.
+func SigningURLFunc(f SignURLFunc) TikTokLiveOption {
+	return func(t *TikTok) error {
+		t.signURLFunc = f
+		return nil
+	}
+}
+
+// WebSocketMode switches the real-time transport from the default im/fetch
+// long-poll to TikTok's WebSocket push server. If the WebSocket cannot be
+// established, TrackRoom falls back to long-poll automatically.
+func WebSocketMode() TikTokLiveOption {
+	return func(t *TikTok) error {
+		t.useWebSocket = true
+		return nil
+	}
+}
+
 // PollInterval sets the im/fetch long-poll interval (default 3s). Ignored when
 // ConnectionMode is "websocket".
 func PollInterval(d time.Duration) TikTokLiveOption {

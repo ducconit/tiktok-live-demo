@@ -99,6 +99,15 @@ func (ss *selfSigner) close() {
 	}
 }
 
+// signOnly signs reqUrl and returns the signed URL (no fetch). Used for the
+// WebSocket handshake URL.
+func (ss *selfSigner) signOnly(reqUrl string) (string, error) {
+	ss.mu.Lock()
+	defer ss.mu.Unlock()
+	ss.signer.SetCookies("ttwid=" + ss.ttwid + "; msToken=" + ss.msToken)
+	return ss.signer.Sign(reqUrl)
+}
+
 // signFetch signs reqUrl and fetches it, returning the response body and a
 // net/http.Header carrying the X-Set-TT-Cookie (and other) headers.
 func (ss *selfSigner) signFetch(reqUrl string) ([]byte, http.Header, error) {

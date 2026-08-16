@@ -39,8 +39,10 @@ type TikTok struct {
 	shouldReconnect          bool
 	enableExperimentalEvents bool
 	enableExtraDebug         bool
+	useWebSocket             bool
 	pollInterval             time.Duration
 	signFunc                 SignFunc
+	signURLFunc              SignURLFunc
 }
 
 // NewTikTok creates a tiktok instance that allows you to track live streams and

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -34,6 +35,7 @@ type Live struct {
 	t *TikTok
 
 	cursor string
+	wss    net.Conn
 	close  func()
 	done   func() <-chan struct{}
 	cancel context.CancelFunc
@@ -66,6 +68,9 @@ func (t *TikTok) newLive(roomId string) *Live {
 			// to call cancel to trigger the other routines, but calls to close is only for
 			// cleanup and block till done
 			cancel()
+			if live.wss != nil {
+				live.wss.Close()
+			}
 			live.wg.Wait()
 		})
 	}
@@ -144,9 +149,14 @@ func (t *TikTok) TrackRoom(roomId string) (*Live, error) {
 		return nil, err
 	}
 
-	// The im/fetch endpoint is a pure HTTP long-poll (TikTok no longer
-	// returns a usable WebSocket push server), so poll on a timer.
-	live.startLongPoll()
+	if t.useWebSocket {
+		if err := live.connectWebSocket(); err != nil {
+			t.warnHandler(fmt.Sprintf("websocket failed (%v), falling back to long-poll", err))
+			live.startLongPoll()
+		}
+	} else {
+		live.startLongPoll()
+	}
 
 	return live, nil
 }

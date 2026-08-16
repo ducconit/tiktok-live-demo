@@ -3,6 +3,7 @@ package signer
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 const testUA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
@@ -33,7 +34,9 @@ func TestSignerProducesSignatures(t *testing.T) {
 }
 
 // TestSignerXbogusDeterministic verifies X-Bogus is stable for the same input
-// (this was broken with goja — the whole reason we switched to QuickJS).
+// *within the same second* (X-Bogus embeds a second-precision timestamp, so it
+// legitimately changes across second boundaries — this was the goja regression
+// we fixed by switching to QuickJS).
 func TestSignerXbogusDeterministic(t *testing.T) {
 	s, err := New()
 	if err != nil {
@@ -42,6 +45,12 @@ func TestSignerXbogusDeterministic(t *testing.T) {
 	defer s.Close()
 	s.SetUserAgent(testUA)
 	s.SetCookies("ttwid=test; msToken=test")
+
+	// Align to just after a second boundary so both Sign() calls (each ~0.3s)
+	// share the same second-precision timestamp.
+	now := time.Now()
+	next := now.Truncate(time.Second).Add(time.Second)
+	time.Sleep(time.Until(next) + 200*time.Millisecond)
 
 	first, err := s.Sign(testURL)
 	if err != nil {
@@ -52,7 +61,7 @@ func TestSignerXbogusDeterministic(t *testing.T) {
 		t.Fatalf("Sign 2: %v", err)
 	}
 	if xb := extractParam(first, "X-Bogus"); xb != extractParam(second, "X-Bogus") {
-		t.Fatalf("X-Bogus not deterministic: %s vs %s", xb, extractParam(second, "X-Bogus"))
+		t.Fatalf("X-Bogus not deterministic within same second: %s vs %s", xb, extractParam(second, "X-Bogus"))
 	}
 }
 

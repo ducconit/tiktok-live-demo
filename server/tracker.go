@@ -119,16 +119,17 @@ func startLive(username string, emit emitFunc, cfg config) (controller, error) {
 	if err != nil {
 		return nil, fmt.Errorf("self-hosted signer init: %w", err)
 	}
-	opts = append(opts, gotiktoklive.SigningFunc(ss.signFetch))
+	opts = append(opts, gotiktoklive.SigningFunc(ss.signFetch), gotiktoklive.SigningURLFunc(ss.signOnly))
 
 	// Connection mode + polling interval (configurable via CONNECTION_MODE /
-	// POLL_INTERVAL_MS). WebSocket chưa được tích hợp — tạm fallback long-poll.
+	// POLL_INTERVAL_MS). Mặc định long-poll; websocket fallback long-poll nếu lỗi.
+	opts = append(opts, gotiktoklive.PollInterval(time.Duration(cfg.PollIntervalMs)*time.Millisecond))
 	switch cfg.ConnectionMode {
 	case "websocket":
-		logf("[tiktok-bar] CONNECTION_MODE=websocket chưa được tích hợp — fallback long-poll (bước tiếp theo sẽ thêm)")
-		opts = append(opts, gotiktoklive.PollInterval(time.Duration(cfg.PollIntervalMs)*time.Millisecond))
+		logf("[tiktok-bar] connection mode: websocket")
+		opts = append(opts, gotiktoklive.WebSocketMode())
 	default:
-		opts = append(opts, gotiktoklive.PollInterval(time.Duration(cfg.PollIntervalMs)*time.Millisecond))
+		logf("[tiktok-bar] connection mode: long_poll (poll %dms)", cfg.PollIntervalMs)
 	}
 
 	t, err := gotiktoklive.NewTikTok(opts...)
