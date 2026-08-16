@@ -10,14 +10,22 @@ interface Props {
 export function ConnectBar({ connected, connecting, onConnect, onDisconnect }: Props) {
   const [value, setValue] = useState("");
 
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
+  const submit = () => {
     if (!value.trim() || connected || connecting) return;
     onConnect(value.trim());
   };
 
+  // Form submit is ONLY used for the Enter key (preventDefault stops the
+  // native submission). Both buttons are type="button" so clicking Dừng never
+  // triggers a form submission — otherwise React swapping the button's type to
+  // "submit" mid-click makes the browser submit + auto-reconnect.
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    submit();
+  };
+
   return (
-    <form onSubmit={submit} className="flex w-full max-w-sm items-center gap-2">
+    <form onSubmit={handleSubmit} className="flex w-full max-w-sm items-center gap-2">
       <div className="relative flex-1">
         <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">
           @
@@ -40,7 +48,8 @@ export function ConnectBar({ connected, connecting, onConnect, onDisconnect }: P
         </button>
       ) : (
         <button
-          type="submit"
+          type="button"
+          onClick={submit}
           disabled={connecting || !value.trim()}
           className="shrink-0 rounded-lg bg-ttcyan px-4 py-2 text-sm font-medium text-black transition-opacity hover:opacity-90 disabled:opacity-40"
         >
