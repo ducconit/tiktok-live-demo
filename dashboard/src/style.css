@@ -50,11 +50,20 @@ body {
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
-/* Mặc định border màu theo token (chống fallback currentColor → trắng khi
-   dùng class `border` không kèm border-border — shadcn-vue chuẩn) */
+/* Mặc định border theo token (chống fallback currentColor → trắng khi dùng
+   class `border` không kèm border-border) + cursor pointer cho nút */
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
   }
 }
 
