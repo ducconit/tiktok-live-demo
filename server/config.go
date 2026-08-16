@@ -11,6 +11,11 @@ type config struct {
 	LogDir         string
 	ConnectionMode string // "long_poll" (default) hoặc "websocket"
 	PollIntervalMs int    // ms, mặc định 3000
+
+	SockudoURL      string // mặc định http://localhost:6001
+	SockudoAppID    string
+	SockudoAppKey   string
+	SockudoAppSecret string
 }
 
 func loadConfig() config {
@@ -33,7 +38,18 @@ func loadConfig() config {
 			cfg.PollIntervalMs = n
 		}
 	}
+	cfg.SockudoURL = getenvDefault("SOCKUDO_URL", "http://localhost:6001")
+	cfg.SockudoAppID = getenvDefault("SOCKUDO_APP_ID", "demo-app")
+	cfg.SockudoAppKey = getenvDefault("SOCKUDO_APP_KEY", "demo-key")
+	cfg.SockudoAppSecret = getenvDefault("SOCKUDO_APP_SECRET", "demo-secret")
 	return cfg
+}
+
+func getenvDefault(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
 }
 
 func parseInt(s string) int {

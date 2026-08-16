@@ -121,10 +121,6 @@ func roomPreview(username string) (map[string]interface{}, error) {
 	return out, nil
 }
 
-func startTracker(username string, emit emitFunc, cfg config) (controller, error) {
-	return startLive(username, emit, cfg)
-}
-
 // getSelfSigner lazily initializes the shared self-hosted signer (QuickJS +
 // Chrome TLS). QuickJS init is expensive (~seconds), so it is reused across
 // trackers.
@@ -141,13 +137,13 @@ func getSelfSigner() (*selfSigner, error) {
 	return selfSignerInst, selfSignerErr
 }
 
-func startLive(username string, emit emitFunc, cfg config) (controller, error) {
+func startLive(username string, cfg config, pub *sockudoPublisher) (controller, event, error) {
 	opts := []gotiktoklive.TikTokLiveOption{}
 
 	// Self-hosted signer (QuickJS) — no third-party dependency.
 	ss, err := getSelfSigner()
 	if err != nil {
-		return nil, fmt.Errorf("self-hosted signer init: %w", err)
+		return nil, event{}, fmt.Errorf("self-hosted signer init: %w", err)
 	}
 	opts = append(opts, gotiktoklive.SigningFunc(ss.signFetch), gotiktoklive.SigningURLFunc(ss.signOnly))
 
@@ -156,15 +152,12 @@ func startLive(username string, emit emitFunc, cfg config) (controller, error) {
 	opts = append(opts, gotiktoklive.PollInterval(time.Duration(cfg.PollIntervalMs)*time.Millisecond))
 	switch cfg.ConnectionMode {
 	case "websocket":
-		logf("[tiktok-bar] connection mode: websocket")
 		opts = append(opts, gotiktoklive.WebSocketMode())
-	default:
-		logf("[tiktok-bar] connection mode: long_poll (poll %dms)", cfg.PollIntervalMs)
 	}
 
 	t, err := gotiktoklive.NewTikTok(opts...)
 	if err != nil {
-		return nil, err
+		return nil, event{}, err
 	}
 	t.SetErrorHandler(func(v ...interface{}) {
 		logf("tiktok error: %v", v)
@@ -175,14 +168,14 @@ func startLive(username string, emit emitFunc, cfg config) (controller, error) {
 
 	live, err := t.TrackUser(username)
 	if err != nil {
-		return nil, err
+		return nil, event{}, err
 	}
 
 	if rawLogger != nil {
 		rawLogger.line(fmt.Sprintf("connected username=%s roomId=%s", username, live.ID))
 	}
 
-	emit(event{
+	connected := event{
 		Type: "status",
 		Data: map[string]interface{}{
 			"state":    "connected",
@@ -190,7 +183,7 @@ func startLive(username string, emit emitFunc, cfg config) (controller, error) {
 			"roomInfo": roomInfoToJSON(live.Info),
 		},
 		Ts: time.Now().UnixMilli(),
-	})
+	}
 
 	c := &liveController{live: live}
 	go func() {
@@ -201,25 +194,29 @@ func startLive(username string, emit emitFunc, cfg config) (controller, error) {
 			if ev.IsHistory() {
 				continue
 			}
-			relayEvent(ev, emit)
+			if e, ok := toEvent(ev); ok {
+				if err := pub.publish("user_"+username, "event", e); err != nil {
+					logf("sockudo publish: %v", err)
+				}
+			}
 		}
 		if rawLogger != nil {
 			rawLogger.line("disconnected (events channel closed)")
 		}
 	}()
-	return c, nil
+	return c, connected, nil
 }
 
-func relayEvent(ev gotiktoklive.Event, emit emitFunc) {
+func toEvent(ev gotiktoklive.Event) (event, bool) {
 	now := time.Now().UnixMilli()
 	switch e := ev.(type) {
 	case gotiktoklive.ChatEvent:
-		emit(event{Type: "chat", Data: map[string]interface{}{
+		return event{Type: "chat", Data: map[string]interface{}{
 			"comment":   e.Comment,
 			"user":      userToJSON(e.User),
 			"msgId":     e.MessageID,
 			"timestamp": e.Timestamp,
-		}, Ts: now})
+		}, Ts: now}, true
 
 	case gotiktoklive.UserEvent:
 		t := "member"
@@ -233,10 +230,10 @@ func relayEvent(ev gotiktoklive.Event, emit emitFunc) {
 		if t == "member" && e.MemberCount > 0 {
 			data["memberCount"] = e.MemberCount
 		}
-		emit(event{Type: t, Data: data, Ts: now})
+		return event{Type: t, Data: data, Ts: now}, true
 
 	case gotiktoklive.GiftEvent:
-		emit(event{Type: "gift", Data: map[string]interface{}{
+		return event{Type: "gift", Data: map[string]interface{}{
 			"giftId":       e.ID,
 			"giftType":     e.Type,
 			"repeatCount":  e.RepeatCount,
@@ -245,51 +242,53 @@ func relayEvent(ev gotiktoklive.Event, emit emitFunc) {
 			"diamondCount": e.Diamonds,
 			"user":         userToJSON(e.User),
 			"toUserId":     e.ToUserID,
-		}, Ts: now})
+		}, Ts: now}, true
 
 	case gotiktoklive.LikeEvent:
-		emit(event{Type: "like", Data: map[string]interface{}{
+		return event{Type: "like", Data: map[string]interface{}{
 			"likeCount":      e.Likes,
 			"totalLikeCount": e.TotalLikes,
 			"user":           userToJSON(e.User),
-		}, Ts: now})
+		}, Ts: now}, true
 
 	case gotiktoklive.ViewersEvent:
-		emit(event{Type: "roomUser", Data: map[string]interface{}{"viewerCount": e.Viewers}, Ts: now})
+		return event{Type: "roomUser", Data: map[string]interface{}{"viewerCount": e.Viewers}, Ts: now}, true
 
 	case gotiktoklive.QuestionEvent:
-		emit(event{Type: "questionNew", Data: map[string]interface{}{
+		return event{Type: "questionNew", Data: map[string]interface{}{
 			"questionText": e.Quesion,
 			"user":         userToJSON(e.User),
-		}, Ts: now})
+		}, Ts: now}, true
 
 	case gotiktoklive.ControlEvent:
 		if e.Action == 3 {
-			emit(statusEvent("ended"))
+			return statusEvent("ended"), true
 		}
+		return event{}, false
 
 	case gotiktoklive.IntroEvent:
-		emit(event{Type: "liveIntro", Data: map[string]interface{}{
+		return event{Type: "liveIntro", Data: map[string]interface{}{
 			"title": e.Title,
 			"user":  userToJSON(e.User),
-		}, Ts: now})
+		}, Ts: now}, true
 
 	case gotiktoklive.MicBattleEvent:
 		users := make([]userJSON, 0, len(e.Users))
 		for _, u := range e.Users {
 			users = append(users, userToJSON(u))
 		}
-		emit(event{Type: "linkMicBattle", Data: map[string]interface{}{"users": users}, Ts: now})
+		return event{Type: "linkMicBattle", Data: map[string]interface{}{"users": users}, Ts: now}, true
 
 	case gotiktoklive.BattlesEvent:
-		emit(event{Type: "linkMicArmies", Data: map[string]interface{}{
+		return event{Type: "linkMicArmies", Data: map[string]interface{}{
 			"status":  e.Status,
 			"battles": battlesToJSON(e.Battles),
-		}, Ts: now})
+		}, Ts: now}, true
 
 	case gotiktoklive.DisconnectEvent:
-		emit(statusEvent("disconnected"))
+		return statusEvent("disconnected"), true
 	}
+	return event{}, false
 }
 
 type battleJSON struct {

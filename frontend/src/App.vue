@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { useLiveSocket } from "@/composables/useLiveSocket";
+import { useRealtime } from "@/composables/useRealtime";
 import type { RoomInfo } from "@/types";
 import ConnectBar from "@/components/ConnectBar.vue";
 import RoomCard from "@/components/RoomCard.vue";
 import EventFeed from "@/components/EventFeed.vue";
 
-const { status, events, viewerCount, connectRoom, disconnectRoom } = useLiveSocket();
+const { status, events, viewerCount, connect, disconnect } = useRealtime();
 
 const connected = computed(() => status.value.state === "connected");
 const connecting = computed(() => status.value.state === "connecting");
@@ -37,8 +37,8 @@ const roomInfo = computed<RoomInfo | null>(() => {
         <ConnectBar
           :connected="connected"
           :connecting="connecting"
-          @connect="connectRoom"
-          @disconnect="disconnectRoom"
+          @connect="connect"
+          @disconnect="disconnect"
         />
       </div>
     </header>

@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@lucide/vue": "^1.31.0",
+    "@sockudo/client": "^2.1.0",
     "@tanstack/vue-query": "^5.62.0",
     "@vueuse/core": "^14.4.0",
     "axios": "^1.7.9",

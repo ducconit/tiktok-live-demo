@@ -9,7 +9,6 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
 )
 
 func logf(format string, v ...interface{}) {
@@ -35,20 +34,16 @@ func setupLogging(cfg config) {
 	}
 }
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin:     func(r *http.Request) bool { return true },
-}
-
 func main() {
 	cfg := loadConfig()
 	setupLogging(cfg)
 
-	// Gin framework (release mode; override with GIN_MODE=debug nếu cần).
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(gin.Recovery())
+
+	pub := newSockudoPublisher(cfg)
+	rooms := newRoomRegistry(cfg, pub)
 
 	r.GET("/api/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"ok": true})
@@ -64,15 +59,35 @@ func main() {
 		c.JSON(http.StatusOK, data)
 	})
 
-	r.GET("/ws", func(c *gin.Context) {
-		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-		if err != nil {
-			logf("ws upgrade: %v", err)
+	// Control: bắt đầu/dừng track; events được publish lên Sockudo channel
+	// "user_<username>" (client subscribe qua @sockudo/client).
+	r.POST("/api/connect", func(c *gin.Context) {
+		var req struct {
+			Username string `json:"username"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil || req.Username == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"connected": false, "error": "thiếu username"})
 			return
 		}
-		cl := newClient(conn, cfg)
-		go cl.writePump()
-		go cl.readPump()
+		username := normalizeUsername(req.Username)
+		data, err := rooms.connect(username)
+		if err != nil {
+			c.JSON(http.StatusBadGateway, gin.H{"connected": false, "error": friendlyError(err)})
+			return
+		}
+		c.JSON(http.StatusOK, data)
+	})
+
+	r.POST("/api/disconnect", func(c *gin.Context) {
+		var req struct {
+			Username string `json:"username"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil || req.Username == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "thiếu username"})
+			return
+		}
+		rooms.disconnect(normalizeUsername(req.Username))
+		c.JSON(http.StatusOK, gin.H{"ok": true})
 	})
 
 	serveFrontend(r)
@@ -81,6 +96,7 @@ func main() {
 	logf("[tiktok-bar] server listening on http://localhost%s", addr)
 	logf("[tiktok-bar] signing: self-hosted (QuickJS) — no third-party sign server")
 	logf("[tiktok-bar] connection mode: %s (poll %dms)", cfg.ConnectionMode, cfg.PollIntervalMs)
+	logf("[tiktok-bar] realtime: Sockudo %s (app %s)", cfg.SockudoURL, cfg.SockudoAppID)
 
 	if err := r.Run(addr); err != nil {
 		log.Fatalf("server: %v", err)
@@ -88,7 +104,7 @@ func main() {
 }
 
 // serveFrontend phục vụ bản build frontend (Vite/Vue) qua gin: assets tĩnh +
-// SPA fallback (mọi route không khớp API/WS → index.html).
+// SPA fallback (mọi route không khớp API → index.html).
 func serveFrontend(r *gin.Engine) {
 	var dist string
 	for _, candidate := range []string{"frontend/dist", "../frontend/dist"} {

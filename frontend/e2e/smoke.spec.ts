@@ -1,7 +1,8 @@
 import { test, expect, type Page, type WebSocketRoute } from "@playwright/test";
 
-// Mock mode (CI): intercept /api/room/* + /ws in the browser — no TikTok.
-// Production e2e: set E2E_MOCK=0 + E2E_LIVE_USER / E2E_OFFLINE_USER to hit real TikTok.
+// Mock mode (CI): intercept REST (/api/connect, /api/disconnect, /api/room) +
+// Sockudo WebSocket (ws://localhost:6001) — no TikTok needed.
+// Production e2e: E2E_MOCK=0 + E2E_LIVE_USER / E2E_OFFLINE_USER (cần Sockudo + TikTok thật).
 const MOCK = process.env.E2E_MOCK !== "0";
 const LIVE_USER = process.env.E2E_LIVE_USER ?? "mock.live";
 const OFFLINE_USER = process.env.E2E_OFFLINE_USER ?? "mock.offline";
@@ -10,26 +11,54 @@ function send(ws: WebSocketRoute, payload: unknown) {
   ws.send(JSON.stringify(payload));
 }
 
-function parseWsMessage(message: unknown): { action?: string; username?: string } {
+function parseMsg(message: unknown): { event?: string; data?: { channel?: string } } {
   let raw: string;
-  if (typeof message === "string") {
-    raw = message;
-  } else if (message && typeof (message as { text?: () => string }).text === "function") {
+  if (typeof message === "string") raw = message;
+  else if (message && typeof (message as { text?: () => string }).text === "function") {
     raw = (message as { text: () => string }).text();
-  } else {
-    raw = String(message);
-  }
+  } else raw = String(message);
   try {
-    return JSON.parse(raw) as { action?: string; username?: string };
+    return JSON.parse(raw);
   } catch {
     return {};
   }
 }
 
-async function setupMockNetwork(page: Page) {
-  if (!MOCK) return;
+async function mockSockudoWs(page: Page) {
+  await page.routeWebSocket("**/app/**", (ws) => {
+    // Server → client: báo connection established trước khi client dám subscribe.
+    send(ws, {
+      event: "pusher:connection_established",
+      data: { socket_id: "mock.socket.1234", activity_timeout: 30 },
+    });
 
-  // Mock REST: /api/room/<user>
+    let timer: ReturnType<typeof setInterval> | undefined;
+    ws.onMessage((message) => {
+      const data = parseMsg(message);
+      if (data.event === "pusher:subscribe") {
+        const channel = data.data?.channel ?? "";
+        send(ws, { event: "pusher_internal:subscription_succeeded", channel, data: {} });
+        const events = [
+          { type: "chat", data: { comment: "hello mock 👋", user: { uniqueId: "mock.user", nickname: "Mock User" } }, ts: Date.now() },
+          { type: "gift", data: { giftName: "Rose", repeatCount: 1, diamondCount: 1, user: { uniqueId: "mock.user", nickname: "Mock User" } }, ts: Date.now() },
+          { type: "member", data: { user: { uniqueId: "mock.user2", nickname: "Mock User 2" }, memberCount: 1235 }, ts: Date.now() },
+        ];
+        let i = 0;
+        timer = setInterval(() => {
+          const e = events[i % events.length];
+          send(ws, { event: "event", channel, data: JSON.stringify(e) });
+          i++;
+        }, 400);
+      }
+    });
+    ws.onClose(() => {
+      if (timer) clearInterval(timer);
+    });
+  });
+}
+
+async function mockRest(page: Page) {
+  // Room preview (GET)
   await page.route("**/api/room/*", (route) => {
     const user = decodeURIComponent(route.request().url().split("/").pop() ?? "");
     const live = user === LIVE_USER;
@@ -44,48 +73,40 @@ async function setupMockNetwork(page: Page) {
     });
   });
 
-  // Mock WS: /ws
-  await page.routeWebSocket("**/ws", (ws) => {
-    ws.onMessage((message) => {
-      const data = parseWsMessage(message);
-      if (data.action === "connect") {
-        if (data.username === LIVE_USER) {
-          send(ws, { type: "status", data: { state: "connecting", username: data.username }, ts: Date.now() });
-          setTimeout(() => {
-            send(ws, {
-              type: "status",
-              data: {
-                state: "connected",
-                roomId: "1234567890123456789",
-                roomInfo: { title: "Mock LIVE", owner: { uniqueId: data.username, nickname: data.username }, userCount: 1234 },
-              },
-              ts: Date.now(),
-            });
-            const events = [
-              { type: "chat", data: { comment: "hello mock 👋", user: { uniqueId: "mock.user", nickname: "Mock User" } } },
-              { type: "gift", data: { giftName: "Rose", repeatCount: 1, diamondCount: 1, user: { uniqueId: "mock.user", nickname: "Mock User" } } },
-              { type: "member", data: { user: { uniqueId: "mock.user2", nickname: "Mock User 2" }, memberCount: 1235 } },
-            ];
-            let i = 0;
-            const timer = setInterval(() => {
-              const e = events[i % events.length];
-              send(ws, { type: e.type, data: e.data, ts: Date.now() });
-              i++;
-            }, 400);
-            ws.onClose(() => clearInterval(timer));
-          }, 400);
-        } else {
-          send(ws, { type: "status", data: { state: "error", message: "User này hiện không đang LIVE." }, ts: Date.now() });
-        }
-      } else if (data.action === "disconnect") {
-        send(ws, { type: "status", data: { state: "idle" }, ts: Date.now() });
-      }
-    });
+  // Connect / disconnect control
+  await page.route("**/api/connect", async (route) => {
+    const req = route.request();
+    const body = req.postDataJSON() as { username?: string };
+    const user = body?.username ?? "";
+    if (user === LIVE_USER) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          connected: true,
+          roomId: "1234567890123456789",
+          roomInfo: { title: "Mock LIVE", owner: { uniqueId: user, nickname: user }, userCount: 1234 },
+        }),
+      });
+    } else {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ connected: false, error: "User này hiện không đang LIVE." }),
+      });
+    }
   });
+
+  await page.route("**/api/disconnect", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) }),
+  );
 }
 
 test.beforeEach(async ({ page }) => {
-  await setupMockNetwork(page);
+  if (MOCK) {
+    await mockRest(page);
+    await mockSockudoWs(page);
+  }
   await page.goto("/");
 });
 
@@ -102,10 +123,10 @@ test("connect to LIVE user shows events; Dừng stops and does NOT auto-reconnec
   const stopBtn = page.getByRole("button", { name: "Dừng" });
   await expect(stopBtn).toBeVisible({ timeout: 10_000 });
 
-  // Real-time mock events arrive.
+  // Mock events arrive qua Sockudo channel.
   await expect(page.getByText(/hello mock|Rose/)).toBeVisible({ timeout: 10_000 });
 
-  // Dừng → idle, and must NOT auto-reconnect.
+  // Dừng → idle, không auto-reconnect.
   await stopBtn.click();
   const connectBtn = page.getByRole("button", { name: "Kết nối" });
   await expect(connectBtn).toBeVisible();

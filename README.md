@@ -10,6 +10,8 @@ share, battle… cùng thông tin phòng và host.
 > [`docs/research/tiktok-live-events.md`](docs/research/tiktok-live-events.md) và
 > [`docs/research/tiktok-interactive-games.md`](docs/research/tiktok-interactive-games.md).
 
+> **Release 1.3.0** — realtime chuyển sang **Sockudo** (Pusher-compatible WS server, Docker).
+> Xem [`docs/RELEASE-1.3.md`](docs/RELEASE-1.3.md).
 > **Release 1.2.0** — server chuyển sang **Gin (gin-gonic)**. Xem [`docs/RELEASE-1.2.md`](docs/RELEASE-1.2.md).
 > **Release 1.1.0** — frontend chuyển sang **Vue 3 + Tailwind v4 + shadcn-vue + TanStack Query + axios**,
 > thêm room preview + unit/e2e tests. Xem [`docs/RELEASE-1.1.md`](docs/RELEASE-1.1.md).
@@ -24,7 +26,7 @@ share, battle… cùng thông tin phòng và host.
 └────────────┘                └──────────────────────────────┘                        └────────────────┘
 ```
 
-- **`server/`** — Go + **Gin (gin-gonic)** + `gorilla/websocket`. Nhận `{"action":"connect"}` qua WebSocket,
+- **`server/`** — Go + **Gin (gin-gonic)** + **Sockudo publisher** (Pusher HTTP API). Publish events lên Sockudo, điều khiển qua REST (`POST /api/connect`),
   chạy `gotiktoklive.TrackUser()`, relay các event đã decode tới client.
 - **`frontend/`** — Vue 3 + Vite + TypeScript, **Tailwind CSS v4** + **shadcn-vue** + **TanStack Query** +
   **axios**. Ô nhập username + live event feed + room preview.
