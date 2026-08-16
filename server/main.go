@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"io"
 	"log"
 	"net/http"
@@ -9,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
 
@@ -43,52 +43,53 @@ var upgrader = websocket.Upgrader{
 
 func main() {
 	cfg := loadConfig()
-
 	setupLogging(cfg)
 
-	mux := http.NewServeMux()
+	// Gin framework (release mode; override with GIN_MODE=debug nếu cần).
+	gin.SetMode(gin.ReleaseMode)
+	r := gin.New()
+	r.Use(gin.Recovery())
 
-	mux.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{"ok": true})
+	r.GET("/api/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"ok": true})
 	})
 
-	mux.HandleFunc("/api/room/{username}", func(w http.ResponseWriter, r *http.Request) {
-		username := normalizeUsername(r.PathValue("username"))
-		w.Header().Set("Content-Type", "application/json")
+	r.GET("/api/room/:username", func(c *gin.Context) {
+		username := normalizeUsername(c.Param("username"))
 		data, err := roomPreview(username)
 		if err != nil {
-			w.WriteHeader(http.StatusBadGateway)
-			json.NewEncoder(w).Encode(map[string]interface{}{"live": false, "error": err.Error()})
+			c.JSON(http.StatusBadGateway, gin.H{"live": false, "error": err.Error()})
 			return
 		}
-		json.NewEncoder(w).Encode(data)
+		c.JSON(http.StatusOK, data)
 	})
 
-	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		conn, err := upgrader.Upgrade(w, r, nil)
+	r.GET("/ws", func(c *gin.Context) {
+		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
 			logf("ws upgrade: %v", err)
 			return
 		}
-		c := newClient(conn, cfg)
-		go c.writePump()
-		go c.readPump()
+		cl := newClient(conn, cfg)
+		go cl.writePump()
+		go cl.readPump()
 	})
 
-	serveFrontend(mux)
+	serveFrontend(r)
 
 	addr := ":" + strconv.Itoa(cfg.Port)
 	logf("[tiktok-bar] server listening on http://localhost%s", addr)
 	logf("[tiktok-bar] signing: self-hosted (QuickJS) — no third-party sign server")
 	logf("[tiktok-bar] connection mode: %s (poll %dms)", cfg.ConnectionMode, cfg.PollIntervalMs)
 
-	if err := http.ListenAndServe(addr, mux); err != nil {
+	if err := r.Run(addr); err != nil {
 		log.Fatalf("server: %v", err)
 	}
 }
 
-func serveFrontend(mux *http.ServeMux) {
+// serveFrontend phục vụ bản build frontend (Vite/Vue) qua gin: assets tĩnh +
+// SPA fallback (mọi route không khớp API/WS → index.html).
+func serveFrontend(r *gin.Engine) {
 	var dist string
 	for _, candidate := range []string{"frontend/dist", "../frontend/dist"} {
 		if _, err := os.Stat(candidate); err == nil {
@@ -103,14 +104,15 @@ func serveFrontend(mux *http.ServeMux) {
 		return
 	}
 
-	fs := http.FileServer(http.Dir(dist))
-	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/" || !fileExists(filepath.Join(dist, r.URL.Path)) {
-			http.ServeFile(w, r, filepath.Join(dist, "index.html"))
+	r.Static("/assets", filepath.Join(dist, "assets"))
+	r.NoRoute(func(c *gin.Context) {
+		p := filepath.Join(dist, c.Request.URL.Path)
+		if fileExists(p) {
+			c.File(p)
 			return
 		}
-		fs.ServeHTTP(w, r)
-	}))
+		c.File(filepath.Join(dist, "index.html"))
+	})
 }
 
 func fileExists(path string) bool {
