@@ -7,7 +7,6 @@ require (
 	github.com/bogdanfinn/tls-client v1.15.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/joho/godotenv v1.5.1
-	github.com/refraction-networking/utls v1.8.2
 	github.com/steampoweredtaco/gotiktoklive v0.0.4
 )
 
@@ -21,9 +20,6 @@ require (
 	github.com/bogdanfinn/utls v1.7.7-barnius // indirect
 	github.com/bogdanfinn/websocket v1.5.5-barnius // indirect
 	github.com/erni27/imcache v1.2.1 // indirect
-	github.com/gobwas/httphead v0.1.0 // indirect
-	github.com/gobwas/pool v0.2.1 // indirect
-	github.com/gobwas/ws v1.1.0 // indirect
 	github.com/klauspost/compress v1.18.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect

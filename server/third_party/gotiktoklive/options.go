@@ -17,19 +17,6 @@ func SigningFunc(f SignFunc) TikTokLiveOption {
 	}
 }
 
-// SignURLFunc signs a URL (returning the signed URL) without fetching it.
-// Used for the WebSocket handshake, which must be signed but is dialed with a
-// WebSocket client rather than fetched over HTTP.
-type SignURLFunc func(reqUrl string) (string, error)
-
-// SigningURLFunc installs a sign-only function for the WebSocket URL.
-func SigningURLFunc(f SignURLFunc) TikTokLiveOption {
-	return func(t *TikTok) error {
-		t.signURLFunc = f
-		return nil
-	}
-}
-
 // EnableExperimentalEvents enables experimental events that have not been figured out yet and the API for them is not
 // stable. It may also induce additional logging that might be undesirable.
 func EnableExperimentalEvents(t *TikTok) error {
@@ -45,16 +32,6 @@ func EnableExtraWebCastDebug(t *TikTok) error {
 	return nil
 }
 
-// EnableWSTrace will put traces for all websocket messages into the given file. The file will be overwritten so
-// if you want multiple traces make sure handle giving a unique filename each startup.
-func EnableWSTrace(file string) TikTokLiveOption {
-	return func(t *TikTok) error {
-		t.enableWSTrace = true
-		t.wsTraceFile = file
-		t.wsTraceChan = make(chan struct{ direction, hex string }, 50)
-		return nil
-	}
-}
 
 // Proxy will set a proxy for both the http client and the websocket. You can
 // manually set a proxy with option or by using the HTTPS_PROXY environment variable.

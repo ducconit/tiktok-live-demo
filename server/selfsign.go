@@ -49,17 +49,25 @@ func newSelfSigner() (*selfSigner, error) {
 	// Warmup: obtain a fresh ttwid cookie (TikTok soft-blocks without one).
 	// net/http's cookie jar reliably captures Set-Cookie (the fhttp client
 	// does not), so warmup via net/http and reuse the ttwid for the fetch.
-	ss.warmup()
+	// Retry a few times on failure, otherwise the signer soft-blocks.
+	for i := 0; i < 3 && ss.ttwid == ""; i++ {
+		ss.warmup()
+	}
 
-	// Mint an initial msToken; it rotates on every im/fetch response.
-	if tok, err := signer.MintMsToken(); err == nil {
-		ss.msToken = tok
+	// Mint an initial msToken; it rotates on every im/fetch response. Retry a
+	// few times on failure (the first fetch self-heals via X-Ms-Token anyway).
+	for i := 0; i < 3 && ss.msToken == ""; i++ {
+		if tok, err := signer.MintMsToken(); err == nil {
+			ss.msToken = tok
+		}
 	}
 
 	return ss, nil
 }
 
-func (ss *selfSigner) warmup() {
+// fetchTtwid performs a fresh warmup (GET tiktok.com) and returns the ttwid
+// cookie value, or "" on failure.
+func (ss *selfSigner) fetchTtwid() string {
 	jar, _ := cookiejar.New(nil)
 	c := &http.Client{Jar: jar, Timeout: 15e9}
 	for _, u := range []string{"https://www.tiktok.com/", "https://www.tiktok.com/foryou"} {
@@ -73,9 +81,15 @@ func (ss *selfSigner) warmup() {
 	u, _ := url.Parse("https://www.tiktok.com")
 	for _, ck := range jar.Cookies(u) {
 		if ck.Name == "ttwid" {
-			ss.ttwid = ck.Value
-			return
+			return ck.Value
 		}
+	}
+	return ""
+}
+
+func (ss *selfSigner) warmup() {
+	if ttwid := ss.fetchTtwid(); ttwid != "" {
+		ss.ttwid = ttwid
 	}
 }
 
@@ -83,15 +97,6 @@ func (ss *selfSigner) close() {
 	if ss != nil && ss.signer != nil {
 		ss.signer.Close()
 	}
-}
-
-// signOnly signs reqUrl and returns the signed URL (no fetch). Used for the
-// WebSocket handshake URL.
-func (ss *selfSigner) signOnly(reqUrl string) (string, error) {
-	ss.mu.Lock()
-	defer ss.mu.Unlock()
-	ss.signer.SetCookies("ttwid=" + ss.ttwid + "; msToken=" + ss.msToken)
-	return ss.signer.Sign(reqUrl)
 }
 
 // signFetch signs reqUrl and fetches it, returning the response body and a

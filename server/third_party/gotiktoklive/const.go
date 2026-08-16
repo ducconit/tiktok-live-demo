@@ -22,10 +22,8 @@ const (
 	urlGiftInfo = "gift/list/"
 
 	urlCheckLive = "room/check_alive/"
-	// For some reason the user info needs user agent this way but wsUserAgent doesn't want it
-	userAgent   = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
-	wsUserAgent = "5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
-	referer     = "https://www.tiktok.com/"
+	userAgent    = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+	referer      = "https://www.tiktok.com/"
 	// webcast backend will fail if origin is an ending /
 	origin = "https://www.tiktok.com"
 )
@@ -80,9 +78,6 @@ var (
 		// clientId:  = "ttlive-golang"
 		"Accept-Language": "en-US,en;q=0.9",
 		"Accept-Encoding": "gzip, deflate",
-	}
-	wsOverrideHeaders = map[string]string{
-		"User-Agent": wsUserAgent,
 	}
 	reJsonData = []*regexp.Regexp{
 		regexp.MustCompile(`<script id="SIGI_STATE"[^>]+>(.*?)</script>`),

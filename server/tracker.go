@@ -119,7 +119,7 @@ func startLive(username string, emit emitFunc, cfg config) (controller, error) {
 	if err != nil {
 		return nil, fmt.Errorf("self-hosted signer init: %w", err)
 	}
-	opts = append(opts, gotiktoklive.SigningFunc(ss.signFetch), gotiktoklive.SigningURLFunc(ss.signOnly))
+	opts = append(opts, gotiktoklive.SigningFunc(ss.signFetch))
 
 	t, err := gotiktoklive.NewTikTok(opts...)
 	if err != nil {

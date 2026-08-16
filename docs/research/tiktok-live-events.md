@@ -214,7 +214,7 @@ Secondary source — README của `zerodytrash/TikTok-Live-Connector` (Node.js):
 Từ README của Node connector:
 
 1. Bạn bắt đầu chỉ với một creator `@unique_id` (ví dụ từ
-   `https://www.tiktok.com/@officialgeilegisela/live` → `officialgeilegisela`).
+   `https://www.tiktok.com/@ducnt.tiktok/live` → `ducnt.tiktok`).
 2. Thư viện fetch room info từ web API của TikTok để resolve `roomId`.
 3. Nó kết nối đến Webcast push service (`webcast.tiktok.com`), upgrade lên WebSocket khi TikTok
    cung cấp (option `enableWebsocketUpgrade`, mặc định `true`); ngược lại nó fallback sang request

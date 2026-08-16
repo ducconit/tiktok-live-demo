@@ -114,18 +114,18 @@ func (s *Signer) Sign(rawURL string) (string, error) {
 }
 
 func extractJS() (string, error) {
-	dir, err := os.MkdirTemp("", "tiktok-signer-js")
-	if err != nil {
+	// Use a fixed dir so a killed process (no Close) leaves at most one dir,
+	// which is overwritten on the next start instead of accumulating.
+	dir := filepath.Join(os.TempDir(), "tiktok-signer-js")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", err
 	}
 	for _, name := range jsFileNames {
 		b, err := jsFiles.ReadFile("js/" + name)
 		if err != nil {
-			os.RemoveAll(dir)
 			return "", err
 		}
 		if err := os.WriteFile(filepath.Join(dir, name), b, 0o644); err != nil {
-			os.RemoveAll(dir)
 			return "", err
 		}
 	}

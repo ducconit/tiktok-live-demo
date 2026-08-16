@@ -40,7 +40,7 @@ npm install
 npm run dev                 # http://localhost:5173
 ```
 
-Mở http://localhost:5173, nhập `@username` của một streamer **đang LIVE** (vd `nhu2hand2`), bấm
+Mở http://localhost:5173, nhập `@username` của một streamer **đang LIVE** (vd `ducnt.tiktok`), bấm
 **Kết nối** → nhận event real-time.
 
 ### Signing (self-hosted)

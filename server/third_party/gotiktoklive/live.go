@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -34,13 +33,10 @@ const (
 type Live struct {
 	t *TikTok
 
-	cursor   string
-	wss      net.Conn
-	wsURL    string
-	wsParams map[string]string
-	close    func()
-	done     func() <-chan struct{}
-	cancel   context.CancelFunc
+	cursor string
+	close  func()
+	done   func() <-chan struct{}
+	cancel context.CancelFunc
 
 	ID       string
 	Info     *RoomInfo
@@ -70,9 +66,6 @@ func (t *TikTok) newLive(roomId string) *Live {
 			// to call cancel to trigger the other routines, but calls to close is only for
 			// cleanup and block till done
 			cancel()
-			if live.wss != nil {
-				live.wss.Close()
-			}
 			live.wg.Wait()
 		})
 	}
@@ -151,13 +144,9 @@ func (t *TikTok) TrackRoom(roomId string) (*Live, error) {
 		return nil, err
 	}
 
-	// The im/fetch endpoint no longer returns a push server (TikTok moved to
-	// a pure HTTP long-poll). Fall back to polling im/fetch on a timer.
-	if live.wsURL == "" {
-		live.startLongPoll()
-	} else if err := live.connectRoom(); err != nil {
-		return nil, err
-	}
+	// The im/fetch endpoint is a pure HTTP long-poll (TikTok no longer
+	// returns a usable WebSocket push server), so poll on a timer.
+	live.startLongPoll()
 
 	return live, nil
 }
@@ -172,23 +161,31 @@ func (l *Live) startLongPoll() {
 		defer close(l.Events)
 		ticker := time.NewTicker(2 * time.Second)
 		defer ticker.Stop()
+		fails := 0
 		for {
 			select {
 			case <-l.done():
 				return
 			case <-ticker.C:
 				if err := l.getRoomData(); err != nil {
-					l.t.errHandler(fmt.Errorf("im/fetch long-poll failed: %w", err))
-					// Tolerate transient failures; only stop on cancellation.
+					fails++
+					l.t.errHandler(fmt.Errorf("im/fetch long-poll failed (%d/3): %w", fails, err))
+					// Give up after 3 consecutive failures (initial + 2 retries)
+					// instead of polling forever on an offline/blocked room.
+					if fails >= 3 {
+						l.t.infoHandler("im/fetch long-poll failed 3 consecutive times, ending live")
+						select {
+						case l.Events <- &DisconnectEvent{created: time.Now()}:
+						default:
+						}
+						return
+					}
 					continue
 				}
+				fails = 0
 			}
 		}
 	}()
-}
-
-func (live *Live) connectRoom() error {
-	return live.tryConnectionUpgrade()
 }
 
 func (t *TikTok) getRoomID(user string) (string, error) {
@@ -301,8 +298,8 @@ func (l *Live) getRoomData() error {
 	l.cursor = rsp.Cursor
 
 	// TikTok no longer supports the dedicated WebSocket push server reliably
-	// (the handshake is rejected). The im/fetch response is a long-poll, so
-	// leave wsURL empty and let TrackRoom fall back to the poll loop.
+	// (the handshake is rejected). The im/fetch response is a long-poll; the
+	// push-server fields (PushServer/RouteParamsMap) are ignored.
 	_ = rsp.PushServer
 	_ = rsp.RouteParamsMap
 
